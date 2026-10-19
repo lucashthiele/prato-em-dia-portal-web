@@ -27,3 +27,21 @@ Toda interface do portal segue `design-system/`. Antes de criar ou alterar qualq
 
 - `prototipos/telas.html`: telas de exemplo aprovadas (Login, Pacientes, Prescrição, Acompanhamento) montadas só com o design system. Para abrir: servidor `prototipos` em `.claude/launch.json` (porta 4380). É um retrato estático, não código de produção.
 - A versão publicada do design system: https://claude.ai/artifact/2JojWRjBQ5xRyVvp2kRLKr. Ao mudar o sistema, mude `design-system/` primeiro e mantenha os dois iguais.
+
+## Planejamento obrigatório antes de implementar
+
+Antes de modificar qualquer arquivo ou escrever código para resolver uma issue, você deve obrigatoriamente criar um plano de arquitetura e validá-lo com o usuário. Não prossiga com a implementação sem a aprovação explícita do plano.
+
+O plano deve descrever:
+
+- **Arquivos afetados:** quais arquivos serão criados, alterados ou removidos (incluindo testes).
+- **Lógica a implementar:** o que muda em cada arquivo e por quê, incluindo decisões de design, telas/estados de UI afetados e alternativas descartadas.
+- **Riscos e pontos em aberto:** impacto em fluxos existentes, compatibilidade com a API e dúvidas que dependem do usuário.
+- **Estratégia de testes:** como a mudança será verificada (testes de unidade/componente e validação manual no portal).
+
+Fluxo:
+
+1. Leia a issue e explore o código (somente leitura) para embasar o plano.
+2. Apresente o plano ao usuário e aguarde validação.
+3. Se o usuário pedir ajustes, atualize o plano e valide novamente.
+4. Só então implemente, seguindo o plano aprovado. Se surgir algo que o invalide, pare e alinhe antes de continuar.
