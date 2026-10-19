@@ -1,0 +1,17 @@
+<!-- @dsCard group="Dados" height=330 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>MealTable</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(P.MealTable,{caption:'Refeições da semana 8',rows:[
+  {time:'07:00',meal:'Café da manhã',items:'Aveia com frutas vermelhas',kcal:400,status:'done'},
+  {time:'10:00',meal:'Lanche',items:'Iogurte natural + castanhas',kcal:180,status:'done'},
+  {time:'12:30',meal:'Almoço',items:'Frango, arroz integral, salada',kcal:650,status:'substituted'},
+  {time:'16:00',meal:'Lanche da tarde',items:'Sanduíche integral',kcal:220,status:'skipped'},
+  {time:'19:30',meal:'Jantar',items:'Omelete + salada',kcal:550,status:'none'}]}));
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<!-- @dsCard group="Paciente" height=140 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>PatientHeader</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(P.PatientHeader,{name:'Ana Ribeiro',email:'ana.ribeiro@email.com',linkStatus:'active',accessStatus:'failed',description:'Prescrição v3 publicada em 12/04 por Marina Costa',actions:[h(P.Button,{key:1,variant:'outline',icon:'mail'},'Reenviar acesso'),h(P.Button,{key:2,icon:'plus'},'Nova versão')]}));
+</script>
+</body>
+</html>

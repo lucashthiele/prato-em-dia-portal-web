@@ -1,0 +1,13 @@
+<!-- @dsCard group="Feedback" height=300 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>ConfirmDialog</title></head>
+<body>
+<div id="root" style="padding:0;height:300px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(P.ConfirmDialog,{inline:true,title:'Publicar versão 4?',confirmLabel:'Publicar versão',onCancel:function(){},onConfirm:function(){}},
+  h('p',null,'Ana Ribeiro passa a ver esta versão no app. A versão 3 é arquivada e as semanas já planejadas continuam como estão.')));
+</script>
+</body>
+</html>

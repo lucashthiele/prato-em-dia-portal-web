@@ -1,0 +1,148 @@
+/* Prato em Dia — Portal Pro Nutri — generated from tokens.json */
+:root, [data-theme="light"] {
+  --canvas: #fffbf3; /* Page background behind the main content area (mobile _canvas). */
+  --surface: #ffffff; /* Cards, tables, inputs, dialogs — any delimited unit on the canvas. */
+  --surface-low: #f4f0e6; /* Sidebar, neutral chips, hovered rows, read-only blocks. */
+  --surface-container: #ece7dc; /* Table header band, neutral status chip fill, skeletons. */
+  --ink: #1d2820; /* Primary text on canvas, surface, surface-low and surface-container (≥11:1 both themes). */
+  --ink-muted: #5a675e; /* Secondary text, metadata, table headers on canvas, surface, surface-low, surface-container (≥4.8:1). */
+  --outline: #66746a; /* Input and control borders, unselected radio/checkbox rings (≥4.3:1 on canvas/surface/surface-low). */
+  --outline-variant: #e4ded2; /* Hairlines: card borders (1.5px), table row dividers, sidebar divider. Decorative only. */
+  --primary: #197c3d; /* The one action colour: primary buttons, selected nav, focus ring, links. As text only on canvas, surface or surface-low. */
+  --on-primary: #ffffff; /* Text and icons on a primary fill (5.3:1 light, 7.7:1 dark). */
+  --primary-container: #d4f2dc; /* Selected nav item, tonal button, 'Vínculo ativo' and 'Publicada' chips. */
+  --on-primary-container: #155a2d; /* Text and icons on primary-container (≥6.5:1). */
+  --secondary: #9b6038; /* Food-support clay: meal-group accents, substitution marker icon. As text only on canvas or surface. */
+  --secondary-container: #fbe2cc; /* 'Realizada com substituição', 'Alterada' and 'Rascunho' chips; substitution rows. */
+  --on-secondary-container: #6b3a17; /* Text and icons on secondary-container (≥7.5:1). */
+  --danger: #b3261e; /* Destructive buttons, field errors, 'Falha no envio'. As text on canvas, surface, surface-low. */
+  --on-danger: #ffffff; /* Text on a danger fill. */
+  --danger-container: #fbdedb; /* Error banner and 'Não realizada' / 'Falha no envio' chip fill. */
+  --on-danger-container: #8c1d18; /* Text and icons on danger-container (≥7:1). */
+  --scrim: rgba(29, 40, 32, 0.4); /* Overlay behind confirmation dialogs. */
+  --shadow-overlay: 0 12px 32px rgba(29, 40, 32, 0.16); /* Dialogs and menus only. Everything on the page is flat: borders, not shadows. */
+}
+[data-theme="dark"] {
+  --canvas: #0e1513;
+  --surface: #151d19;
+  --surface-low: #1a231f;
+  --surface-container: #232d28;
+  --ink: #e3ece5;
+  --ink-muted: #a6b3aa;
+  --outline: #86948a;
+  --outline-variant: #2f3a34;
+  --primary: #7fd99b;
+  --on-primary: #00391a;
+  --primary-container: #1f5a33;
+  --on-primary-container: #c8f0d3;
+  --secondary: #f0b48a;
+  --secondary-container: #5a3519;
+  --on-secondary-container: #ffdcc4;
+  --danger: #ffb4ab;
+  --on-danger: #690005;
+  --danger-container: #7a1d18;
+  --on-danger-container: #ffdad6;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --shadow-overlay: 0 0 0 1px rgba(227, 236, 229, 0.16), 0 16px 40px rgba(0, 0, 0, 0.72);
+}
+:root {
+  --space-1: 4px; /* Icon-to-text gap inside chips. */
+  --space-2: 8px; /* Gap between label and field; icon-to-label in buttons and nav. */
+  --space-3: 12px; /* Chip horizontal padding, gap between stacked fields' hint and next field. */
+  --space-4: 16px; /* Card padding, input padding (mobile contentPadding), table cell horizontal padding. */
+  --space-5: 20px; /* Gap between cards in a grid. */
+  --space-6: 24px; /* Section gap inside a page; sidebar padding. */
+  --space-8: 32px; /* Main content padding on desktop; gap between page header and content. */
+  --space-10: 40px; /* Empty-state vertical padding. */
+  --radius-sm: 10px; /* Table container inner corners, small menus, tooltip. */
+  --radius-md: 18px; /* Buttons, inputs, nav items, alerts (mobile buttons and inputs). */
+  --radius-lg: 26px; /* Cards, metric tiles, dialogs (mobile cardTheme). */
+  --radius-pill: 999px; /* Status chips, tabs indicator, avatar. */
+  --border-hairline: 1px; /* Table row dividers, input borders. */
+  --border-card: 1.5px; /* Card and metric-tile outline in outline-variant (mobile cardTheme side). */
+  --border-focus: 2px; /* Focus ring and focused input border, in primary. */
+  --control-height: 44px; /* Buttons and inputs on desktop (mobile uses 52/48 touch targets). */
+  --sidebar-width: 280px; /* Fixed width of the SideNav on desktop. */
+  --content-max: 1120px; /* Max width of the main content column. */
+  --font-sans: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --text-display: 700 34px/1.15 var(--font-sans); /* Login and Início greeting only. Mobile displaySmall. */
+  --text-headline: 700 26px/1.2 var(--font-sans); /* Page title: patient name in PatientHeader, list page titles. Mobile headlineSmall. */
+  --text-title: 700 18px/24px var(--font-sans); /* Card and dialog titles, section headings inside a page. */
+  --text-subtitle: 600 16px/1.35 var(--font-sans); /* Meal names, list row primary line. Mobile titleMedium. */
+  --text-body-lg: 400 16px/1.45 var(--font-sans); /* Form values, prescription notes the patient will read. Mobile bodyLarge. */
+  --text-body: 400 14px/1.45 var(--font-sans); /* Default UI text: table cells, descriptions, metadata. Mobile bodyMedium. */
+  --text-label: 600 14px/20px var(--font-sans); /* Buttons, nav items, field labels, chips. */
+  --text-caption: 500 12px/16px var(--font-sans); /* Hints under fields, timestamps, helper text. */
+  --text-overline: 600 12px/16px var(--font-sans); /* Table column headers and small section labels; always uppercase via text-transform. */
+  --text-metric: 700 28px/32px var(--font-sans); /* MetricTile values. Use tabular numerals (font-variant-numeric: tabular-nums). */
+}
+.display {
+  font-family: var(--font-sans);
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.headline {
+  font-family: var(--font-sans);
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.title {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.subtitle {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.body-lg {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.overline {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+}
+.metric {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}

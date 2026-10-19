@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal Pro Nutri — telas de exemplo</title>
+<style>:root{--canvas:#fffbf3;--surface:#ffffff;--surface-low:#f4f0e6;--surface-container:#ece7dc;--ink:#1d2820;--ink-muted:#5a675e;--outline:#66746a;--outline-variant:#e4ded2;--primary:#197c3d;--on-primary:#ffffff;--primary-container:#d4f2dc;--on-primary-container:#155a2d;--secondary:#9b6038;--secondary-container:#fbe2cc;--on-secondary-container:#6b3a17;--danger:#b3261e;--on-danger:#ffffff;--danger-container:#fbdedb;--on-danger-container:#8c1d18;--scrim:rgba(29, 40, 32, 0.4);--shadow-overlay:0 12px 32px rgba(29, 40, 32, 0.16);--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--space-10:40px;--radius-sm:10px;--radius-md:18px;--radius-lg:26px;--radius-pill:999px;--border-hairline:1px;--border-card:1.5px;--border-focus:2px;--control-height:44px;--sidebar-width:280px;--content-max:1120px;--font-sans:"Figtree", "Segoe UI", system-ui, sans-serif;}
+:root[data-theme=dark]{--canvas:#0e1513;--surface:#151d19;--surface-low:#1a231f;--surface-container:#232d28;--ink:#e3ece5;--ink-muted:#a6b3aa;--outline:#86948a;--outline-variant:#2f3a34;--primary:#7fd99b;--on-primary:#00391a;--primary-container:#1f5a33;--on-primary-container:#c8f0d3;--secondary:#f0b48a;--secondary-container:#5a3519;--on-secondary-container:#ffdcc4;--danger:#ffb4ab;--on-danger:#690005;--danger-container:#7a1d18;--on-danger-container:#ffdad6;--scrim:rgba(0, 0, 0, 0.6);--shadow-overlay:0 0 0 1px rgba(227, 236, 229, 0.16), 0 16px 40px rgba(0, 0, 0, 0.72);}</style>
+<style>@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap");
+
+/* Prato em Dia — Portal Pro Nutri components. Every value reads a token from tokens.json. */
+body { background: var(--canvas); color: var(--ink); font-family: var(--font-sans); font-size: 14px; line-height: 1.45; margin: 0; -webkit-font-smoothing: antialiased; }
+.pd-icon { flex: none; display: inline-block; vertical-align: middle; }
+.pd-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.pd-muted { color: var(--ink-muted); }
+:where(.pd-btn, .pd-navitem, .pd-tab, .pd-iconbtn, .pd-field__input, .pd-policy__opt):focus-visible { outline: var(--border-focus) solid var(--primary); outline-offset: 2px; }
+
+/* Button */
+.pd-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--control-height); padding: 0 var(--space-5); border-radius: var(--radius-md); border: var(--border-hairline) solid transparent; font: 600 14px/20px var(--font-sans); cursor: pointer; transition: background-color .15s ease-out, border-color .15s ease-out; white-space: nowrap; }
+.pd-btn--sm { min-height: 36px; padding: 0 var(--space-4); }
+.pd-btn--primary { background: var(--primary); color: var(--on-primary); }
+.pd-btn--primary:hover:not(:disabled) { background: var(--on-primary-container); }
+.pd-btn--tonal { background: var(--primary-container); color: var(--on-primary-container); }
+.pd-btn--tonal:hover:not(:disabled) { border-color: var(--primary); }
+.pd-btn--outline { background: var(--surface); color: var(--ink); border-color: var(--outline); }
+.pd-btn--outline:hover:not(:disabled) { background: var(--surface-low); }
+.pd-btn--ghost { background: transparent; color: var(--primary); }
+.pd-btn--ghost:hover:not(:disabled) { background: var(--surface-low); }
+.pd-btn--danger { background: var(--danger); color: var(--on-danger); }
+.pd-btn:disabled { cursor: not-allowed; }
+.pd-btn:disabled:not(.is-loading) { background: var(--surface-container); color: var(--ink-muted); border-color: transparent; }
+.pd-spinner { width: 16px; height: 16px; border-radius: var(--radius-pill); border: 2px solid currentColor; border-right-color: transparent; animation: pd-spin .8s linear infinite; flex: none; }
+.pd-spinner--sm { width: 12px; height: 12px; }
+@keyframes pd-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pd-spinner { animation-duration: 2.4s; } }
+
+/* StatusChip */
+.pd-chip { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 26px; padding: 0 var(--space-3) 0 10px; border-radius: var(--radius-pill); font: 600 12px/16px var(--font-sans); white-space: nowrap; }
+.pd-chip--success { background: var(--primary-container); color: var(--on-primary-container); }
+.pd-chip--warm { background: var(--secondary-container); color: var(--on-secondary-container); }
+.pd-chip--danger { background: var(--danger-container); color: var(--on-danger-container); }
+.pd-chip--neutral { background: var(--surface-container); color: var(--ink-muted); }
+
+/* TextField */
+.pd-field { display: flex; flex-direction: column; gap: var(--space-2); }
+.pd-field__label { font: 600 14px/20px var(--font-sans); color: var(--ink); }
+.pd-field__control { position: relative; display: flex; }
+.pd-field__icon { position: absolute; left: var(--space-4); top: 50%; transform: translateY(-50%); color: var(--ink-muted); pointer-events: none; }
+.pd-field__input { flex: 1; min-height: var(--control-height); box-sizing: border-box; padding: 10px var(--space-4); border-radius: var(--radius-md); border: var(--border-hairline) solid var(--outline); background: var(--surface); color: var(--ink); font: 400 16px/1.45 var(--font-sans); }
+textarea.pd-field__input { min-height: 96px; resize: vertical; }
+.pd-field__input.has-icon { padding-left: 44px; }
+.pd-field__input::placeholder { color: var(--ink-muted); }
+.pd-field__input:focus-visible { outline: none; border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.pd-field.is-error .pd-field__input { border-color: var(--danger); }
+.pd-field__hint { display: flex; align-items: center; gap: var(--space-1); margin: 0; font: 500 12px/16px var(--font-sans); color: var(--ink-muted); }
+.pd-field__hint--error { color: var(--danger); }
+
+/* Tabs */
+.pd-tabs { display: flex; gap: var(--space-6); border-bottom: var(--border-hairline) solid var(--outline-variant); }
+.pd-tab { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); background: none; border: 0; padding: var(--space-3) 0; font: 600 14px/20px var(--font-sans); color: var(--ink-muted); cursor: pointer; }
+.pd-tab:hover { color: var(--ink); }
+.pd-tab.is-selected { color: var(--ink); }
+.pd-tab.is-selected::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: var(--radius-pill); background: var(--primary); }
+.pd-tab__count { min-width: 20px; padding: 0 6px; border-radius: var(--radius-pill); background: var(--surface-container); font: 600 12px/20px var(--font-sans); text-align: center; color: var(--ink-muted); }
+
+/* SideNav */
+.pd-sidenav { display: flex; flex-direction: column; gap: var(--space-6); width: var(--sidebar-width); box-sizing: border-box; min-height: 100%; padding: var(--space-6); background: var(--surface-low); border-right: var(--border-hairline) solid var(--outline-variant); }
+.pd-brand { display: flex; align-items: center; gap: var(--space-3); }
+.pd-brand__mark { width: 48px; height: 48px; flex: none; }
+.pd-brand__name { font: 700 18px/22px var(--font-sans); color: var(--ink); letter-spacing: -0.2px; }
+.pd-brand__sub { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); }
+.pd-sidenav__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.pd-navitem { display: flex; align-items: center; gap: var(--space-3); min-height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-md); color: var(--ink-muted); font: 600 15px/20px var(--font-sans); text-decoration: none; transition: background-color .15s ease-out; }
+.pd-navitem:hover { background: var(--surface-container); color: var(--ink); }
+.pd-navitem.is-selected { background: var(--primary-container); color: var(--on-primary-container); }
+.pd-sidenav__user { margin-top: auto; display: flex; align-items: center; gap: var(--space-3); padding-top: var(--space-4); border-top: var(--border-hairline) solid var(--outline-variant); }
+.pd-avatar { width: 36px; height: 36px; flex: none; border-radius: var(--radius-pill); background: var(--primary-container); color: var(--on-primary-container); display: grid; place-items: center; font: 700 13px/1 var(--font-sans); }
+.pd-sidenav__who { flex: 1; min-width: 0; }
+.pd-sidenav__uname { font: 600 14px/20px var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd-sidenav__reg { font: 500 12px/16px var(--font-sans); color: var(--ink-muted); }
+.pd-iconbtn { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--ink-muted); cursor: pointer; }
+.pd-iconbtn:hover { background: var(--surface-container); color: var(--ink); }
+
+/* PatientHeader */
+.pd-phead { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.pd-phead__name { margin: 0; font: 700 26px/1.2 var(--font-sans); letter-spacing: -0.3px; color: var(--ink); }
+.pd-phead__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin-top: var(--space-2); color: var(--ink-muted); }
+.pd-phead__desc { margin: var(--space-2) 0 0; color: var(--ink-muted); }
+.pd-phead__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+/* MetricTile */
+.pd-metric { padding: var(--space-4) var(--space-5); background: var(--surface); border: var(--border-card) solid var(--outline-variant); border-radius: var(--radius-lg); }
+.pd-metric__label { font: 500 14px/20px var(--font-sans); color: var(--ink-muted); }
+.pd-metric__value { margin-top: var(--space-2); font: 700 28px/32px var(--font-sans); letter-spacing: -0.3px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.pd-metric__unit { font-size: 18px; font-weight: 600; }
+.pd-metric__hint { margin-top: var(--space-1); font: 500 12px/16px var(--font-sans); color: var(--ink-muted); }
+
+/* MealTable */
+.pd-tablewrap { overflow-x: auto; background: var(--surface); border: var(--border-card) solid var(--outline-variant); border-radius: var(--radius-lg); }
+.pd-table { width: 100%; border-collapse: collapse; font: 400 14px/1.45 var(--font-sans); }
+.pd-table th { background: var(--surface-container); text-align: left; padding: var(--space-3) var(--space-4); font: 600 12px/16px var(--font-sans); letter-spacing: 0.6px; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
+.pd-table td { padding: var(--space-3) var(--space-4); border-top: var(--border-hairline) solid var(--outline-variant); vertical-align: middle; }
+.pd-table tbody tr:hover td { background: var(--surface-low); }
+.pd-table .is-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pd-table__meal { font-weight: 600; color: var(--ink); }
+.pd-table__items { color: var(--ink-muted); font-size: 13px; }
+
+/* VersionHistory */
+.pd-versions { list-style: none; margin: 0; padding: 0; }
+.pd-version { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-top: var(--border-hairline) solid var(--outline-variant); }
+.pd-version:first-child { border-top: 0; }
+.pd-version__num { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: var(--radius-pill); background: var(--surface-container); font: 700 13px/1 var(--font-sans); color: var(--ink-muted); }
+.pd-version.is-current .pd-version__num { background: var(--primary); color: var(--on-primary); }
+.pd-version__body { flex: 1; min-width: 0; }
+.pd-version__title { font-weight: 600; }
+.pd-version__meta { font: 500 12px/16px var(--font-sans); color: var(--ink-muted); }
+
+/* PolicyPicker */
+.pd-policy { border: 0; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.pd-policy__legend { padding: 0; margin-bottom: var(--space-3); font: 600 14px/20px var(--font-sans); }
+.pd-policy__opt { position: relative; display: flex; gap: var(--space-3); padding: var(--space-4); background: var(--surface); border: var(--border-card) solid var(--outline-variant); border-radius: var(--radius-md); cursor: pointer; }
+.pd-policy__opt:hover { border-color: var(--outline); }
+.pd-policy__opt.is-selected { border-color: var(--primary); background: var(--surface); box-shadow: inset 0 0 0 1px var(--primary); }
+.pd-policy__opt input { position: absolute; opacity: 0; }
+.pd-policy__opt:has(input:focus-visible) { outline: var(--border-focus) solid var(--primary); outline-offset: 2px; }
+.pd-policy__dot { width: 20px; height: 20px; flex: none; margin-top: 1px; box-sizing: border-box; border-radius: var(--radius-pill); border: 2px solid var(--outline); }
+.pd-policy__opt.is-selected .pd-policy__dot { border: 6px solid var(--primary); }
+.pd-policy__title { display: flex; align-items: center; gap: var(--space-2); font: 600 15px/20px var(--font-sans); color: var(--ink); }
+.pd-policy__tag { padding: 2px var(--space-2); border-radius: var(--radius-pill); background: var(--primary-container); color: var(--on-primary-container); font: 600 11px/14px var(--font-sans); }
+.pd-policy__body { display: block; margin-top: 2px; color: var(--ink-muted); }
+
+/* WeekSummary */
+.pd-week { padding: var(--space-5); background: var(--surface); border: var(--border-card) solid var(--outline-variant); border-radius: var(--radius-lg); }
+.pd-week__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--space-3); }
+.pd-week__title { font: 700 18px/24px var(--font-sans); }
+.pd-week__sub { color: var(--ink-muted); }
+.pd-week__planned { color: var(--ink-muted); }
+.pd-week__planned .pd-week__n { font-size: 18px; color: var(--ink); }
+.pd-week__grid { list-style: none; margin: var(--space-4) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-3); }
+.pd-week__cell { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); min-width: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-low); }
+.pd-week__cell .pd-week__n { text-align: right; }
+.pd-week__label { display: flex; align-items: flex-start; gap: var(--space-2); min-width: 0; font: 600 14px/20px var(--font-sans); color: var(--ink); }
+.pd-week__label .pd-icon { margin-top: 2px; }
+.pd-week__cell--success .pd-icon { color: var(--primary); }
+.pd-week__cell--warm .pd-icon { color: var(--secondary); }
+.pd-week__cell--danger .pd-icon { color: var(--danger); }
+.pd-week__cell--neutral .pd-icon { color: var(--ink-muted); }
+.pd-week__n { font: 700 24px/28px var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* Alert */
+.pd-alert { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); }
+.pd-alert > .pd-icon { margin-top: 1px; }
+.pd-alert__body { flex: 1; min-width: 0; }
+.pd-alert__title { font-weight: 700; }
+.pd-alert__action { align-self: center; }
+.pd-alert--info { background: var(--surface-low); color: var(--ink); border: var(--border-hairline) solid var(--outline-variant); }
+.pd-alert--success { background: var(--primary-container); color: var(--on-primary-container); }
+.pd-alert--warm { background: var(--secondary-container); color: var(--on-secondary-container); }
+.pd-alert--danger { background: var(--danger-container); color: var(--on-danger-container); }
+.pd-alert--danger .pd-btn--outline { border-color: var(--on-danger-container); }
+
+/* EmptyState */
+.pd-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-2); padding: var(--space-10) var(--space-6); background: var(--surface); border: var(--border-card) dashed var(--outline-variant); border-radius: var(--radius-lg); }
+.pd-empty__icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: var(--radius-pill); background: var(--surface-low); color: var(--ink-muted); margin-bottom: var(--space-2); }
+.pd-empty__title { font: 700 18px/24px var(--font-sans); }
+.pd-empty__body { margin: 0 0 var(--space-3); max-width: 420px; color: var(--ink-muted); }
+
+/* ConfirmDialog */
+.pd-scrim { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: var(--space-4); background: var(--scrim); }
+.pd-scrim.is-inline { position: relative; inset: auto; min-height: 100%; box-sizing: border-box; }
+.pd-dialog { width: 100%; max-width: 460px; box-sizing: border-box; padding: var(--space-6); background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-overlay); }
+.pd-dialog__title { margin: 0; font: 700 18px/24px var(--font-sans); }
+.pd-dialog__body { margin-top: var(--space-2); color: var(--ink-muted); }
+.pd-dialog__body p { margin: 0 0 var(--space-2); }
+.pd-dialog__actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-6); }
+
+/* SaveStatus */
+.pd-save { display: inline-flex; align-items: center; gap: var(--space-2); font: 500 13px/18px var(--font-sans); color: var(--ink-muted); }
+.pd-save--saved .pd-icon { color: var(--primary); }
+.pd-save--error { color: var(--danger); }
+
+@media (max-width: 900px) {
+  .pd-sidenav { width: 100%; min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: center; padding: var(--space-3) var(--space-4); border-right: 0; border-bottom: var(--border-hairline) solid var(--outline-variant); }
+  .pd-sidenav__list { flex-direction: row; flex-wrap: wrap; }
+  .pd-sidenav__user { display: none; }
+}
+</style>
+<style>
+  .scr-shell { display:flex; height:820px; background:var(--canvas); overflow:hidden; }
+  .scr-shell > .pd-sidenav { flex:none; height:100%; }
+  .scr-main { flex:1; min-width:0; overflow:auto; padding:var(--space-8); box-sizing:border-box; }
+  .scr-inner { max-width:var(--content-max); margin:0 auto; display:flex; flex-direction:column; gap:var(--space-6); }
+  .scr-crumb { display:flex; align-items:center; gap:var(--space-1); font:500 13px/18px var(--font-sans); color:var(--ink-muted); }
+  .scr-crumb a { color:var(--primary); text-decoration:none; font-weight:600; }
+  .scr-h1 { margin:0; font:700 26px/1.2 var(--font-sans); letter-spacing:-0.3px; }
+  .scr-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--space-4); }
+  .scr-grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-5); }
+  .scr-cols { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:var(--space-5); align-items:start; }
+  .scr-stack { display:flex; flex-direction:column; gap:var(--space-5); }
+  .scr-card { background:var(--surface); border:var(--border-card) solid var(--outline-variant); border-radius:var(--radius-lg); padding:var(--space-5); }
+  .scr-card h2 { margin:0 0 var(--space-3); font:700 18px/24px var(--font-sans); }
+  .scr-over { margin:0 0 var(--space-3); font:600 12px/16px var(--font-sans); letter-spacing:.6px; text-transform:uppercase; color:var(--ink-muted); }
+  .scr-muted { color:var(--ink-muted); }
+  .scr-note { margin:0; font:400 16px/1.45 var(--font-sans); color:var(--ink); }
+  .scr-who { font-weight:600; color:var(--ink); }
+  .scr-sub { font:400 13px/18px var(--font-sans); color:var(--ink-muted); }
+</style>
+<style>
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; overflow: hidden; background: var(--canvas); }
+  .proto-bar { flex: none; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); background: var(--surface); border-bottom: var(--border-hairline) solid var(--outline-variant); }
+  .proto-bar strong { margin-right: var(--space-4); font: 700 15px/20px var(--font-sans); }
+  .proto-tab { min-height: 36px; padding: 0 var(--space-4); border-radius: var(--radius-pill); border: var(--border-hairline) solid var(--outline-variant); background: var(--surface); color: var(--ink-muted); font: 600 14px/20px var(--font-sans); cursor: pointer; }
+  .proto-tab[aria-pressed=true] { background: var(--primary-container); color: var(--on-primary-container); border-color: transparent; }
+  .proto-tab:focus-visible { outline: var(--border-focus) solid var(--primary); outline-offset: 2px; }
+  .proto-theme { margin-left: auto; }
+  .proto-hide { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink-muted); cursor: pointer; opacity: .45; transition: opacity .15s ease-out, background-color .15s ease-out; }
+  .proto-hide:hover, .proto-hide:focus-visible { opacity: 1; background: var(--surface-low); color: var(--ink); }
+  .proto-hide:focus-visible, .proto-show:focus-visible { outline: var(--border-focus) solid var(--primary); outline-offset: 2px; }
+  .proto-stage { flex: 1; min-height: 0; }
+  .proto-screen { height: 100%; }
+  .proto-screen[hidden] { display: none; }
+  .proto-screen .scr-shell { height: 100%; }
+  body.bar-hidden .proto-bar { display: none; }
+  .proto-show { position: fixed; top: var(--space-3); right: var(--space-3); z-index: 20; display: none; align-items: center; gap: var(--space-1); min-height: 32px; padding: 0 var(--space-3); border: var(--border-hairline) solid var(--outline-variant); border-radius: var(--radius-pill); background: var(--surface); color: var(--ink); font: 600 12px/16px var(--font-sans); box-shadow: var(--shadow-overlay); cursor: pointer; opacity: .75; transition: opacity .15s ease-out; }
+  .proto-show:hover, .proto-show:focus-visible { opacity: 1; }
+  body.bar-hidden .proto-show { display: inline-flex; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+</head>
+<body>
+<nav class="proto-bar" aria-label="Telas"><strong>Portal Pro Nutri</strong><button type="button" class="proto-tab" data-target="TelaLogin" aria-pressed="true">Login</button><button type="button" class="proto-tab" data-target="TelaPacientes" aria-pressed="false">Pacientes</button><button type="button" class="proto-tab" data-target="TelaPrescricao" aria-pressed="false">Prescrição</button><button type="button" class="proto-tab" data-target="TelaAcompanhamento" aria-pressed="false">Acompanhamento</button><button type="button" class="proto-tab proto-theme" id="proto-theme">Tema escuro</button><button type="button" class="proto-hide" id="proto-hide" aria-label="Esconder barra (tecla `)" title="Esconder barra (tecla `)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button></nav>
+<button type="button" class="proto-show" id="proto-show" title="Mostrar navegação (tecla `)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>Telas</button>
+<main class="proto-stage"><section id="scr-TelaLogin" class="proto-screen" data-screen="TelaLogin"></section><section id="scr-TelaPacientes" class="proto-screen" data-screen="TelaPacientes" hidden></section><section id="scr-TelaPrescricao" class="proto-screen" data-screen="TelaPrescricao" hidden></section><section id="scr-TelaAcompanhamento" class="proto-screen" data-screen="TelaAcompanhamento" hidden></section></main>
+<script>/* @ds-bundle: {"format":4,"namespace":"PratoPortal","components":[{"name":"Button"},{"name":"StatusChip"},{"name":"TextField"},{"name":"Tabs"},{"name":"SideNav"},{"name":"PatientHeader"},{"name":"MetricTile"},{"name":"MealTable"},{"name":"VersionHistory"},{"name":"PolicyPicker"},{"name":"WeekSummary"},{"name":"Alert"},{"name":"EmptyState"},{"name":"ConfirmDialog"},{"name":"SaveStatus"},{"name":"Icon"}]} */
+(function () {
+  var React = window.React;
+  var h = React.createElement;
+  function cx() { return Array.prototype.filter.call(arguments, Boolean).join(' '); }
+
+  var ICONS = {
+    home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.4 3.4-5 6.5-5s5.7 1.6 6.5 5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 15.3c1.9.6 3.1 2.2 3.5 4.7"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.2-6 8-6s7 2 8 6"/>',
+    file: '<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    x: '<path d="M6 6l12 12M18 6 6 18"/>',
+    swap: '<path d="M4 8h14l-3.5-3.5"/><path d="M20 16H6l3.5 3.5"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>',
+    alert: '<path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4"/><path d="M12 17h.01"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+    history: '<path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 8v4.5l3 2"/>',
+    logout: '<path d="M9 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+    chevron: '<path d="m9 6 6 6-6 6"/>',
+    minus: '<path d="M5 12h14"/>'
+  };
+
+  function Icon(p) {
+    var size = p.size || 20;
+    return h('svg', {
+      className: cx('pd-icon', p.className), width: size, height: size, viewBox: '0 0 24 24',
+      fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round',
+      'aria-hidden': p.label ? undefined : true, 'aria-label': p.label, role: p.label ? 'img' : undefined,
+      dangerouslySetInnerHTML: { __html: ICONS[p.name] || '' }
+    });
+  }
+
+  function Button(p) {
+    var variant = p.variant || 'primary', size = p.size || 'md';
+    var rest = Object.assign({}, p);
+    ['variant', 'size', 'icon', 'loading', 'children', 'className'].forEach(function (k) { delete rest[k]; });
+    return h('button', Object.assign({ type: 'button' }, rest, {
+      className: cx('pd-btn', 'pd-btn--' + variant, 'pd-btn--' + size, p.loading && 'is-loading', p.className),
+      disabled: p.disabled || p.loading, 'aria-busy': p.loading || undefined
+    }),
+      p.loading ? h('span', { className: 'pd-spinner', 'aria-hidden': true }) : (p.icon ? h(Icon, { name: p.icon, size: 18 }) : null),
+      h('span', null, p.children));
+  }
+
+  var STATUS = {
+    done: ['Realizada', 'check', 'success'],
+    skipped: ['Não realizada', 'x', 'danger'],
+    substituted: ['Alterada', 'swap', 'warm', 'Realizada com substituição'],
+    none: ['Sem registro', 'minus', 'neutral'],
+    draft: ['Rascunho', 'file', 'warm'],
+    published: ['Publicada', 'check', 'success'],
+    archived: ['Arquivada', 'history', 'neutral'],
+    active: ['Vínculo ativo', 'check', 'success'],
+    ended: ['Vínculo encerrado', 'x', 'neutral'],
+    pending: ['Envio pendente', 'clock', 'neutral'],
+    sent: ['Acesso enviado', 'mail', 'success'],
+    failed: ['Falha no envio', 'alert', 'danger']
+  };
+
+  function StatusChip(p) {
+    var s = STATUS[p.status] || STATUS.none;
+    return h('span', { className: cx('pd-chip', 'pd-chip--' + s[2], p.className), title: p.label ? undefined : s[3] },
+      h(Icon, { name: s[1], size: 14 }), h('span', null, p.label || s[0]));
+  }
+
+  var fieldSeq = 0;
+  function TextField(p) {
+    var idRef = React.useRef(null);
+    if (!idRef.current) idRef.current = p.id || 'pd-field-' + (++fieldSeq);
+    var id = idRef.current, hintId = id + '-hint';
+    var rest = Object.assign({}, p);
+    ['label', 'hint', 'error', 'icon', 'className', 'id', 'multiline'].forEach(function (k) { delete rest[k]; });
+    var Tag = p.multiline ? 'textarea' : 'input';
+    return h('div', { className: cx('pd-field', p.error && 'is-error', p.className) },
+      h('label', { className: 'pd-field__label', htmlFor: id }, p.label),
+      h('div', { className: 'pd-field__control' },
+        p.icon ? h(Icon, { name: p.icon, size: 18, className: 'pd-field__icon' }) : null,
+        h(Tag, Object.assign({ id: id, className: cx('pd-field__input', p.icon && 'has-icon'), 'aria-invalid': p.error ? true : undefined, 'aria-describedby': (p.error || p.hint) ? hintId : undefined }, rest))),
+      p.error ? h('p', { id: hintId, className: 'pd-field__hint pd-field__hint--error' }, h(Icon, { name: 'alert', size: 14 }), p.error)
+        : p.hint ? h('p', { id: hintId, className: 'pd-field__hint' }, p.hint) : null);
+  }
+
+  function Tabs(p) {
+    return h('div', { className: 'pd-tabs', role: 'tablist', 'aria-label': p.label },
+      p.items.map(function (it) {
+        var sel = it.id === p.value;
+        return h('button', { key: it.id, type: 'button', role: 'tab', 'aria-selected': sel, className: cx('pd-tab', sel && 'is-selected'), onClick: function () { p.onChange && p.onChange(it.id); } },
+          it.label, it.count != null ? h('span', { className: 'pd-tab__count' }, it.count) : null);
+      }));
+  }
+
+  function SideNav(p) {
+    return h('nav', { className: 'pd-sidenav', 'aria-label': 'Principal' },
+      h('div', { className: 'pd-brand' },
+        p.logoSrc ? h('img', { className: 'pd-brand__mark', src: p.logoSrc, alt: '' }) : null,
+        h('div', null, h('div', { className: 'pd-brand__name' }, 'Prato em Dia'), h('div', { className: 'pd-brand__sub' }, 'Portal Pro Nutri'))),
+      h('ul', { className: 'pd-sidenav__list' },
+        p.items.map(function (it) {
+          var sel = it.id === p.value;
+          return h('li', { key: it.id },
+            h('a', { href: it.href || '#', className: cx('pd-navitem', sel && 'is-selected'), 'aria-current': sel ? 'page' : undefined, onClick: function (e) { if (p.onChange) { e.preventDefault(); p.onChange(it.id); } } },
+              h(Icon, { name: it.icon }), h('span', null, it.label)));
+        })),
+      p.user ? h('div', { className: 'pd-sidenav__user' },
+        h('span', { className: 'pd-avatar', 'aria-hidden': true }, p.user.name.split(' ').map(function (w) { return w[0]; }).slice(0, 2).join('')),
+        h('div', { className: 'pd-sidenav__who' }, h('div', { className: 'pd-sidenav__uname' }, p.user.name), p.user.registry ? h('div', { className: 'pd-sidenav__reg' }, p.user.registry) : null),
+        h('button', { type: 'button', className: 'pd-iconbtn', 'aria-label': 'Sair', onClick: p.onLogout }, h(Icon, { name: 'logout', size: 18 }))) : null);
+  }
+
+  function PatientHeader(p) {
+    return h('header', { className: 'pd-phead' },
+      h('div', { className: 'pd-phead__id' },
+        h('h1', { className: 'pd-phead__name' }, p.name),
+        h('div', { className: 'pd-phead__meta' },
+          h('span', null, p.email), h(StatusChip, { status: p.linkStatus || 'active' }),
+          p.accessStatus ? h(StatusChip, { status: p.accessStatus }) : null),
+        p.description ? h('p', { className: 'pd-phead__desc' }, p.description) : null),
+      p.actions ? h('div', { className: 'pd-phead__actions' }, p.actions) : null);
+  }
+
+  function MetricTile(p) {
+    return h('div', { className: 'pd-metric' },
+      h('div', { className: 'pd-metric__label' }, p.label),
+      h('div', { className: 'pd-metric__value' }, p.value, p.unit ? h('span', { className: 'pd-metric__unit' }, ' ' + p.unit) : null),
+      p.hint ? h('div', { className: 'pd-metric__hint' }, p.hint) : null);
+  }
+
+  function MealTable(p) {
+    var showStatus = p.rows.some(function (r) { return r.status; });
+    return h('div', { className: 'pd-tablewrap' },
+      h('table', { className: 'pd-table' },
+        p.caption ? h('caption', { className: 'pd-sr' }, p.caption) : null,
+        h('thead', null, h('tr', null,
+          h('th', { scope: 'col' }, 'Horário'), h('th', { scope: 'col' }, 'Refeição'),
+          h('th', { scope: 'col', className: 'is-num' }, 'kcal'), showStatus ? h('th', { scope: 'col' }, 'Status') : null)),
+        h('tbody', null, p.rows.map(function (r, i) {
+          return h('tr', { key: i },
+            h('td', { className: 'is-num pd-muted' }, r.time),
+            h('td', null, h('div', { className: 'pd-table__meal' }, r.meal), r.items ? h('div', { className: 'pd-table__items' }, r.items) : null),
+            h('td', { className: 'is-num' }, r.kcal),
+            showStatus ? h('td', null, r.status ? h(StatusChip, { status: r.status }) : null) : null);
+        }))));
+  }
+
+  function VersionHistory(p) {
+    return h('ol', { className: 'pd-versions' }, p.versions.map(function (v) {
+      return h('li', { key: v.number, className: cx('pd-version', v.current && 'is-current') },
+        h('span', { className: 'pd-version__num' }, 'v' + v.number),
+        h('div', { className: 'pd-version__body' },
+          h('div', { className: 'pd-version__title' }, v.summary),
+          h('div', { className: 'pd-version__meta' }, v.date + (v.author ? ' · ' + v.author : ''))),
+        h(StatusChip, { status: v.status }));
+    }));
+  }
+
+  var POLICIES = [
+    { id: 'RESTRICTED', title: 'Seguir o plano', body: 'O paciente registra exatamente o que foi prescrito. Recomendado para começar.' },
+    { id: 'SUBSTITUTIONS_ONLY', title: 'Permitir substituições', body: 'O paciente pode trocar um alimento apenas pelas opções que você autorizar em cada item.' },
+    { id: 'FREE', title: 'Montagem livre', body: 'O paciente monta as refeições da semana a partir da prescrição, adicionando ou removendo itens.' }
+  ];
+  function PolicyPicker(p) {
+    var name = p.name || 'policy';
+    return h('fieldset', { className: 'pd-policy' },
+      h('legend', { className: 'pd-policy__legend' }, p.legend || 'Como o paciente pode planejar a semana'),
+      POLICIES.map(function (o) {
+        var sel = o.id === p.value;
+        return h('label', { key: o.id, className: cx('pd-policy__opt', sel && 'is-selected') },
+          h('input', { type: 'radio', name: name, value: o.id, checked: sel, onChange: function () { p.onChange && p.onChange(o.id); } }),
+          h('span', { className: 'pd-policy__dot', 'aria-hidden': true }),
+          h('span', null, h('span', { className: 'pd-policy__title' }, o.title, o.id === 'RESTRICTED' ? h('span', { className: 'pd-policy__tag' }, 'Sugerido') : null),
+            h('span', { className: 'pd-policy__body' }, o.body)));
+      }));
+  }
+
+  function WeekSummary(p) {
+    var c = p.counts;
+    var cells = [['done', c.done], ['substituted', c.substituted], ['skipped', c.skipped], ['none', c.none]];
+    return h('section', { className: 'pd-week' },
+      h('div', { className: 'pd-week__head' },
+        h('div', null, h('div', { className: 'pd-week__title' }, p.title), p.subtitle ? h('div', { className: 'pd-week__sub' }, p.subtitle) : null),
+        h('div', { className: 'pd-week__planned' }, h('span', { className: 'pd-week__n' }, c.planned), ' refeições planejadas')),
+      h('ul', { className: 'pd-week__grid' }, cells.map(function (x) {
+        var s = STATUS[x[0]];
+        return h('li', { key: x[0], className: cx('pd-week__cell', 'pd-week__cell--' + s[2]), title: s[3] },
+          h('span', { className: 'pd-week__label' }, h(Icon, { name: s[1], size: 16 }), h('span', null, s[0])),
+          h('span', { className: 'pd-week__n' }, x[1]));
+      })));
+  }
+
+  function Alert(p) {
+    var tone = p.tone || 'info';
+    var icon = { info: 'alert', success: 'check', danger: 'alert', warm: 'swap' }[tone];
+    return h('div', { className: cx('pd-alert', 'pd-alert--' + tone), role: tone === 'danger' ? 'alert' : 'status' },
+      h(Icon, { name: icon, size: 20 }),
+      h('div', { className: 'pd-alert__body' }, p.title ? h('div', { className: 'pd-alert__title' }, p.title) : null, h('div', null, p.children)),
+      p.action ? h('div', { className: 'pd-alert__action' }, p.action) : null);
+  }
+
+  function EmptyState(p) {
+    return h('div', { className: 'pd-empty' },
+      h('span', { className: 'pd-empty__icon' }, h(Icon, { name: p.icon || 'file', size: 24 })),
+      h('div', { className: 'pd-empty__title' }, p.title),
+      p.children ? h('p', { className: 'pd-empty__body' }, p.children) : null,
+      p.action || null);
+  }
+
+  function ConfirmDialog(p) {
+    if (p.open === false) return null;
+    var tone = p.tone || 'primary';
+    return h('div', { className: cx('pd-scrim', p.inline && 'is-inline') },
+      h('div', { className: 'pd-dialog', role: 'alertdialog', 'aria-modal': true, 'aria-labelledby': 'pd-dialog-title' },
+        h('h2', { id: 'pd-dialog-title', className: 'pd-dialog__title' }, p.title),
+        h('div', { className: 'pd-dialog__body' }, p.children),
+        h('div', { className: 'pd-dialog__actions' },
+          h(Button, { variant: 'ghost', onClick: p.onCancel }, p.cancelLabel || 'Cancelar'),
+          h(Button, { variant: tone === 'danger' ? 'danger' : 'primary', onClick: p.onConfirm, loading: p.loading }, p.confirmLabel))));
+  }
+
+  function SaveStatus(p) {
+    var st = p.state || 'saved';
+    var map = { saving: [null, 'Salvando…'], saved: ['check', 'Rascunho salvo'], error: ['alert', 'Não foi possível salvar'] };
+    return h('span', { className: cx('pd-save', 'pd-save--' + st), role: 'status', 'aria-live': 'polite' },
+      st === 'saving' ? h('span', { className: 'pd-spinner pd-spinner--sm', 'aria-hidden': true }) : h(Icon, { name: map[st][0], size: 16 }),
+      p.label || map[st][1]);
+  }
+
+  window.PratoPortal = Object.assign(window.PratoPortal || {}, {
+    Icon: Icon, Button: Button, StatusChip: StatusChip, TextField: TextField, Tabs: Tabs, SideNav: SideNav,
+    PatientHeader: PatientHeader, MetricTile: MetricTile, MealTable: MealTable, VersionHistory: VersionHistory,
+    PolicyPicker: PolicyPicker, WeekSummary: WeekSummary, Alert: Alert, EmptyState: EmptyState,
+    ConfirmDialog: ConfirmDialog, SaveStatus: SaveStatus
+  });
+})();
+</script>
+<script>(function(){
+  var P = window.PratoPortal, h = React.createElement;
+  var NAV = [{id:'home',label:'Início',icon:'home'},{id:'patients',label:'Pacientes',icon:'users'},{id:'profile',label:'Perfil e conta',icon:'user'}];
+  function Shell(props){ return h('div',{className:'scr-shell'},
+    h(P.SideNav,{logoSrc:'logo.png',items:NAV,value:props.nav||'patients',user:{name:'Marina Costa',registry:'CRN-3 12345'}}),
+    h('main',{className:'scr-main'},h('div',{className:'scr-inner'},props.children))); }
+  function Crumb(){ var name='Ana Ribeiro'; return h('div',{className:'scr-crumb'},h('a',{href:'#'},'Pacientes'),h(P.Icon,{name:'chevron',size:14}),h('span',null,name)); }
+  function Header(tab){ return [h(Crumb,{key:'cr'}),
+    h(P.PatientHeader,{key:'ph',name:'Ana Ribeiro',email:'ana.ribeiro@email.com',linkStatus:'active',description:'Prescrição v3 publicada em 12/04 por Marina Costa',actions:h(P.Button,{variant:'tonal',icon:'file'},'Editar rascunho v4')}),
+    h(P.Tabs,{key:'tb',label:'Paciente',value:tab,items:[{id:'rx',label:'Prescrição'},{id:'wk',label:'Acompanhamento'}]})]; }
+
+  ReactDOM.createRoot(document.getElementById('scr-TelaLogin')).render(
+    h('div',{style:{height:'100%',display:'grid',placeItems:'center',background:'var(--canvas)'}},
+      h('div',{className:'scr-card',style:{width:420,padding:32,display:'flex',flexDirection:'column',gap:20}},
+        h('div',{style:{display:'flex',alignItems:'center',gap:12}},h('img',{src:'logo.png',alt:'',width:48,height:48}),
+          h('div',null,h('div',{className:'pd-brand__name'},'Prato em Dia'),h('div',{className:'pd-brand__sub'},'Portal Pro Nutri'))),
+        h('div',null,h('h1',{className:'scr-h1'},'Entrar'),h('p',{className:'scr-muted',style:{margin:'6px 0 0'}},'Acesse seus pacientes e prescrições.')),
+        h(P.Alert,{tone:'danger'},'E-mail ou senha incorretos. Confira os dados e tente novamente.'),
+        h(P.TextField,{label:'E-mail',type:'email',defaultValue:'marina.costa@clinica.com',autoComplete:'username'}),
+        h(P.TextField,{label:'Senha',type:'password',defaultValue:'senhaerrada',autoComplete:'current-password'}),
+        h(P.Button,{style:{width:'100%'}},'Entrar'),
+        h('p',{className:'scr-sub',style:{margin:0}},'Seu acesso é criado pela equipe do Prato em Dia. Se perdeu a senha, peça uma nova credencial à administração.'))));
+})();
+(function(){
+  var P = window.PratoPortal, h = React.createElement;
+  var NAV = [{id:'home',label:'Início',icon:'home'},{id:'patients',label:'Pacientes',icon:'users'},{id:'profile',label:'Perfil e conta',icon:'user'}];
+  function Shell(props){ return h('div',{className:'scr-shell'},
+    h(P.SideNav,{logoSrc:'logo.png',items:NAV,value:props.nav||'patients',user:{name:'Marina Costa',registry:'CRN-3 12345'}}),
+    h('main',{className:'scr-main'},h('div',{className:'scr-inner'},props.children))); }
+  function Crumb(){ var name='Ana Ribeiro'; return h('div',{className:'scr-crumb'},h('a',{href:'#'},'Pacientes'),h(P.Icon,{name:'chevron',size:14}),h('span',null,name)); }
+  function Header(tab){ return [h(Crumb,{key:'cr'}),
+    h(P.PatientHeader,{key:'ph',name:'Ana Ribeiro',email:'ana.ribeiro@email.com',linkStatus:'active',description:'Prescrição v3 publicada em 12/04 por Marina Costa',actions:h(P.Button,{variant:'tonal',icon:'file'},'Editar rascunho v4')}),
+    h(P.Tabs,{key:'tb',label:'Paciente',value:tab,items:[{id:'rx',label:'Prescrição'},{id:'wk',label:'Acompanhamento'}]})]; }
+
+  function chip(s){ return s ? h(P.StatusChip,{status:s}) : null; }
+  var rows = [
+    ['Ana Ribeiro','ana.ribeiro@email.com','sent','v3 · publicada em 12/04','Semana 8 · 28 de 35 registradas'],
+    ['Carlos Mendes','carlos.m@email.com','sent','v1 · publicada em 02/04','Semana 3 · 19 de 35 registradas'],
+    ['Júlia Prado','julia.prado@email.com','failed',null,'Sem semanas registradas'],
+    ['Roberto Lima','roberto.lima@email.com','pending',null,'Sem semanas registradas'],
+    ['Fernanda Souza','fe.souza@email.com','sent','v2 · rascunho v3 em edição','Semana 5 · 31 de 35 registradas']];
+  ReactDOM.createRoot(document.getElementById('scr-TelaPacientes')).render(h(Shell,{nav:'patients'},
+    h('div',{className:'scr-row'},h('h1',{className:'scr-h1'},'Pacientes'),h(P.Button,{icon:'plus'},'Adicionar paciente')),
+    h(P.Alert,{tone:'danger',title:'1 acesso não foi entregue',action:h(P.Button,{size:'sm',variant:'outline',icon:'mail'},'Reenviar para Júlia')},'O vínculo com Júlia Prado foi criado, mas o e-mail de acesso ao app falhou.'),
+    h('div',{style:{maxWidth:420}},h(P.TextField,{label:'Buscar paciente',icon:'search',placeholder:'Buscar por nome ou e-mail'})),
+    h('div',{className:'pd-tablewrap'},h('table',{className:'pd-table'},
+      h('thead',null,h('tr',null,['Paciente','Acesso ao app','Prescrição vigente','Última semana'].map(function(t){return h('th',{key:t,scope:'col'},t)}))),
+      h('tbody',null,rows.map(function(r){return h('tr',{key:r[0]},
+        h('td',null,h('div',{className:'scr-who'},r[0]),h('div',{className:'scr-sub'},r[1])),
+        h('td',null,chip(r[2])),
+        h('td',null,r[3]||h('span',{className:'scr-muted'},'Sem prescrição')),
+        h('td',{className:'scr-muted'},r[4]));}))))));
+})();
+(function(){
+  var P = window.PratoPortal, h = React.createElement;
+  var NAV = [{id:'home',label:'Início',icon:'home'},{id:'patients',label:'Pacientes',icon:'users'},{id:'profile',label:'Perfil e conta',icon:'user'}];
+  function Shell(props){ return h('div',{className:'scr-shell'},
+    h(P.SideNav,{logoSrc:'logo.png',items:NAV,value:props.nav||'patients',user:{name:'Marina Costa',registry:'CRN-3 12345'}}),
+    h('main',{className:'scr-main'},h('div',{className:'scr-inner'},props.children))); }
+  function Crumb(){ var name='Ana Ribeiro'; return h('div',{className:'scr-crumb'},h('a',{href:'#'},'Pacientes'),h(P.Icon,{name:'chevron',size:14}),h('span',null,name)); }
+  function Header(tab){ return [h(Crumb,{key:'cr'}),
+    h(P.PatientHeader,{key:'ph',name:'Ana Ribeiro',email:'ana.ribeiro@email.com',linkStatus:'active',description:'Prescrição v3 publicada em 12/04 por Marina Costa',actions:h(P.Button,{variant:'tonal',icon:'file'},'Editar rascunho v4')}),
+    h(P.Tabs,{key:'tb',label:'Paciente',value:tab,items:[{id:'rx',label:'Prescrição'},{id:'wk',label:'Acompanhamento'}]})]; }
+
+  ReactDOM.createRoot(document.getElementById('scr-TelaPrescricao')).render(h(Shell,{nav:'patients'},
+    Header('rx'),
+    h(P.Alert,{tone:'warm',title:'Rascunho v4 com alterações não publicadas',action:h('div',{style:{display:'flex',alignItems:'center',gap:12}},h(P.SaveStatus,{state:'saved',label:'Salvo às 14:32'}),h(P.Button,{size:'sm'},'Revisar e publicar'))},'Ana continua vendo a versão 3 no app até você publicar.'),
+    h('div',{className:'scr-cols'},
+      h('div',{className:'scr-stack'},
+        h('div',{className:'scr-grid3'},
+          h(P.MetricTile,{label:'Meta energética',value:'2.000',unit:'kcal'}),
+          h(P.MetricTile,{label:'Proteína',value:'140',unit:'g'}),
+          h(P.MetricTile,{label:'Refeições por dia',value:'5'})),
+        h(P.MealTable,{caption:'Refeições da prescrição v3',rows:[
+          {time:'07:00',meal:'Café da manhã',items:'Aveia 40 g, frutas vermelhas 100 g, leite desnatado 200 ml',kcal:400},
+          {time:'10:00',meal:'Lanche',items:'Iogurte natural 170 g, castanhas 15 g',kcal:180},
+          {time:'12:30',meal:'Almoço',items:'Frango grelhado 120 g, arroz integral 100 g, salada à vontade',kcal:650},
+          {time:'16:00',meal:'Lanche da tarde',items:'Pão integral 2 fatias, queijo branco 30 g',kcal:220},
+          {time:'19:30',meal:'Jantar',items:'Omelete de 2 ovos, salada, azeite 5 ml',kcal:550}]}),
+        h('section',{className:'scr-card'},h('p',{className:'scr-over'},'Observações para o paciente'),
+          h('p',{className:'scr-note'},'Beba água ao longo do dia. Nas refeições com substituição, escolha uma das opções indicadas em cada item.'))),
+      h('div',{className:'scr-stack'},
+        h('section',{className:'scr-card'},h('p',{className:'scr-over'},'Planejamento da semana'),
+          h('div',{style:{fontWeight:700,fontSize:16}},'Permitir substituições'),
+          h('p',{className:'scr-muted',style:{margin:'4px 0 12px'}},'O paciente troca alimentos apenas pelas opções que você autorizou.'),
+          h(P.Button,{size:'sm',variant:'outline'},'Alterar no rascunho')),
+        h('section',{className:'scr-card'},h('p',{className:'scr-over'},'Histórico de versões'),
+          h(P.VersionHistory,{versions:[
+            {number:4,summary:'Ajuste no lanche da tarde',date:'Hoje',status:'draft'},
+            {number:3,summary:'Ajuste de carboidrato',date:'12/04',status:'published',current:true},
+            {number:2,summary:'Nova refeição no lanche',date:'30/03',status:'archived'},
+            {number:1,summary:'Versão inicial',date:'15/03',status:'archived'}]}))))));
+})();
+(function(){
+  var P = window.PratoPortal, h = React.createElement;
+  var NAV = [{id:'home',label:'Início',icon:'home'},{id:'patients',label:'Pacientes',icon:'users'},{id:'profile',label:'Perfil e conta',icon:'user'}];
+  function Shell(props){ return h('div',{className:'scr-shell'},
+    h(P.SideNav,{logoSrc:'logo.png',items:NAV,value:props.nav||'patients',user:{name:'Marina Costa',registry:'CRN-3 12345'}}),
+    h('main',{className:'scr-main'},h('div',{className:'scr-inner'},props.children))); }
+  function Crumb(){ var name='Ana Ribeiro'; return h('div',{className:'scr-crumb'},h('a',{href:'#'},'Pacientes'),h(P.Icon,{name:'chevron',size:14}),h('span',null,name)); }
+  function Header(tab){ return [h(Crumb,{key:'cr'}),
+    h(P.PatientHeader,{key:'ph',name:'Ana Ribeiro',email:'ana.ribeiro@email.com',linkStatus:'active',description:'Prescrição v3 publicada em 12/04 por Marina Costa',actions:h(P.Button,{variant:'tonal',icon:'file'},'Editar rascunho v4')}),
+    h(P.Tabs,{key:'tb',label:'Paciente',value:tab,items:[{id:'rx',label:'Prescrição'},{id:'wk',label:'Acompanhamento'}]})]; }
+
+  ReactDOM.createRoot(document.getElementById('scr-TelaAcompanhamento')).render(h(Shell,{nav:'patients'},
+    Header('wk'),
+    h('div',{className:'scr-row'},
+      h('div',{style:{display:'flex',alignItems:'center',gap:8}},
+        h(P.Button,{size:'sm',variant:'outline','aria-label':'Semana anterior'},'‹ Semana 7'),
+        h('span',{style:{fontWeight:700,fontSize:16,padding:'0 8px'}},'Semana 8 · 07/04 a 13/04'),
+        h(P.Button,{size:'sm',variant:'outline',disabled:true,'aria-label':'Próxima semana'},'Semana 9 ›')),
+      h('span',{className:'scr-sub'},'Atualizado a partir do app há 2 horas')),
+    h(P.WeekSummary,{title:'Resumo da semana',subtitle:'Planejada a partir da prescrição v3 · último registro de cada refeição',counts:{planned:35,done:24,substituted:4,skipped:3,none:4}}),
+    h('section',{className:'scr-stack',style:{gap:12}},
+      h('div',{className:'scr-row'},h('h2',{style:{margin:0,font:'700 18px/24px var(--font-sans)'}},'Quarta, 09/04'),
+        h('span',{className:'scr-sub'},'“Sem registro” indica que o paciente não registrou a refeição no app.')),
+      h(P.MealTable,{caption:'Refeições de quarta, 09/04',rows:[
+        {time:'07:00',meal:'Café da manhã',items:'Conforme prescrito',kcal:400,status:'done'},
+        {time:'10:00',meal:'Lanche',items:'Conforme prescrito',kcal:180,status:'done'},
+        {time:'12:30',meal:'Almoço',items:'Frango → peixe grelhado (substituição autorizada)',kcal:640,status:'substituted'},
+        {time:'16:00',meal:'Lanche da tarde',items:'Motivo informado: reunião no trabalho',kcal:220,status:'skipped'},
+        {time:'19:30',meal:'Jantar',items:'—',kcal:550,status:'none'}]}))));
+})();</script>
+<script>
+  document.querySelectorAll('.proto-tab[data-target]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.proto-tab[data-target]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+      document.querySelectorAll('.proto-screen').forEach(function (s) { s.hidden = s.dataset.screen !== b.dataset.target; });
+    });
+  });
+  var themeBtn = document.getElementById('proto-theme');
+  themeBtn.addEventListener('click', function () {
+    var dark = document.documentElement.dataset.theme !== 'dark';
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    themeBtn.textContent = dark ? 'Tema claro' : 'Tema escuro';
+  });
+  function setBar(hidden) {
+    document.body.classList.toggle('bar-hidden', hidden);
+    try { localStorage.setItem('proto-bar-hidden', hidden ? '1' : '0'); } catch (e) {}
+  }
+  try { if (localStorage.getItem('proto-bar-hidden') === '1') setBar(true); } catch (e) {}
+  document.getElementById('proto-hide').addEventListener('click', function () { setBar(true); });
+  document.getElementById('proto-show').addEventListener('click', function () { setBar(false); });
+  document.addEventListener('keydown', function (e) {
+    var t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+    if (e.key === '`' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setBar(!document.body.classList.contains('bar-hidden')); }
+  });
+</script>
+</body>
+</html>

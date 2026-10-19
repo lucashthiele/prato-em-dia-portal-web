@@ -1,0 +1,12 @@
+<!-- @dsCard group="Base" height=90 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Icon</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'flex',flexWrap:'wrap',gap:18,color:'var(--ink)'}},['home','users','user','file','check','x','swap','clock','mail','alert','plus','search','history','logout','chevron','minus'].map(function(n){return h('span',{key:n,title:n,style:{display:'grid',placeItems:'center',gap:4,fontSize:11,color:'var(--ink-muted)'}},h(P.Icon,{name:n,size:24}),n)})));
+</script>
+</body>
+</html>

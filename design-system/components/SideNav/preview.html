@@ -1,0 +1,12 @@
+<!-- @dsCard group="Navegação" height=560 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>SideNav</title></head>
+<body>
+<div id="root" style="padding:0;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{height:540,display:'flex'}},h(P.SideNav,{logoSrc:'../../assets/prato_em_dia_logo.png',value:'patients',user:{name:'Marina Costa',registry:'CRN-3 12345'},items:[{id:'home',label:'Início',icon:'home'},{id:'patients',label:'Pacientes',icon:'users'},{id:'profile',label:'Perfil e conta',icon:'user'}]})));
+</script>
+</body>
+</html>

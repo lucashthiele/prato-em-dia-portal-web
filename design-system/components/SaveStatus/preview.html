@@ -1,0 +1,12 @@
+<!-- @dsCard group="Feedback" height=80 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>SaveStatus</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'flex',flexWrap:'wrap',gap:24}},h(P.SaveStatus,{state:'saving'}),h(P.SaveStatus,{state:'saved',label:'Rascunho salvo às 14:32'}),h(P.SaveStatus,{state:'error'})));
+</script>
+</body>
+</html>

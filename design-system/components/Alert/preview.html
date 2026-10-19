@@ -1,0 +1,16 @@
+<!-- @dsCard group="Feedback" height=250 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Alert</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'grid',gap:12,maxWidth:640}},
+  h(P.Alert,{tone:'danger',title:'Não foi possível enviar o acesso',action:h(P.Button,{size:'sm',variant:'outline'},'Reenviar')},'O vínculo foi criado. Reenvie o e-mail de acesso para ana.ribeiro@email.com.'),
+  h(P.Alert,{tone:'warm',title:'Rascunho com alterações não publicadas'},'O paciente continua vendo a versão 3 até você publicar.'),
+  h(P.Alert,{tone:'success'},'Prescrição v3 publicada. O paciente já pode planejar a semana.'),
+  h(P.Alert,{tone:'info'},'Sessão expirada. Entre novamente para continuar.')));
+</script>
+</body>
+</html>

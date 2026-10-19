@@ -1,0 +1,15 @@
+<!-- @dsCard group="Dados" height=130 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>MetricTile</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:20}},
+  h(P.MetricTile,{label:'Meta energética',value:'2.000',unit:'kcal'}),
+  h(P.MetricTile,{label:'Proteína',value:'140',unit:'g',hint:'1,8 g/kg'}),
+  h(P.MetricTile,{label:'Refeições por dia',value:'5'})));
+</script>
+</body>
+</html>

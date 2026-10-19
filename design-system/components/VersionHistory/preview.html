@@ -1,0 +1,16 @@
+<!-- @dsCard group="Paciente" height=230 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>VersionHistory</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{maxWidth:520}},h(P.VersionHistory,{versions:[
+  {number:4,summary:'Ajuste no lanche da tarde',date:'Hoje',author:'Marina Costa',status:'draft'},
+  {number:3,summary:'Ajuste de carboidrato',date:'12/04',author:'Marina Costa',status:'published',current:true},
+  {number:2,summary:'Nova refeição no lanche',date:'30/03',author:'Marina Costa',status:'archived'},
+  {number:1,summary:'Versão inicial',date:'15/03',author:'Marina Costa',status:'archived'}]})));
+</script>
+</body>
+</html>

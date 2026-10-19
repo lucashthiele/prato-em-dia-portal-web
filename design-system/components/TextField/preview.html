@@ -1,0 +1,15 @@
+<!-- @dsCard group="Formulários" height=250 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>TextField</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:20}},
+  h(P.TextField,{label:'Nome do paciente',defaultValue:'Ana Ribeiro',hint:'Como aparece no app do paciente.'}),
+  h(P.TextField,{label:'E-mail',type:'email',defaultValue:'ana@exemplo',error:'Informe um e-mail válido.'}),
+  h(P.TextField,{label:'Buscar',icon:'search',placeholder:'Buscar por nome ou e-mail'})));
+</script>
+</body>
+</html>

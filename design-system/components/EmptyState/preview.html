@@ -1,0 +1,12 @@
+<!-- @dsCard group="Feedback" height=260 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>EmptyState</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{maxWidth:560}},h(P.EmptyState,{icon:'users',title:'Nenhum paciente ainda',action:h(P.Button,{icon:'plus'},'Adicionar paciente')},'Cadastre um paciente com nome e e-mail. Ele recebe o acesso ao app Prato em Dia.')));
+</script>
+</body>
+</html>

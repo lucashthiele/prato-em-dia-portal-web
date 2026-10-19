@@ -1,0 +1,12 @@
+<!-- @dsCard group="Navegação" height=80 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Tabs</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(function(){var s=React.useState('rx');return h(P.Tabs,{label:'Paciente',value:s[0],onChange:s[1],items:[{id:'rx',label:'Prescrição'},{id:'wk',label:'Acompanhamento',count:3},{id:'pf',label:'Dados do paciente'}]})}));
+</script>
+</body>
+</html>

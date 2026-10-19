@@ -1,0 +1,19 @@
+<!-- @dsCard group="Ações" height=120 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Button</title></head>
+<body>
+<div id="root" style="padding:16px;"></div>
+<script>
+  var P = window.PratoPortal, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'flex',flexWrap:'wrap',gap:12,alignItems:'center'}},
+  h(P.Button,{icon:'plus'},'Nova versão'),
+  h(P.Button,{variant:'tonal'},'Salvar rascunho'),
+  h(P.Button,{variant:'outline',icon:'mail'},'Reenviar acesso'),
+  h(P.Button,{variant:'ghost'},'Cancelar'),
+  h(P.Button,{variant:'danger'},'Encerrar vínculo'),
+  h(P.Button,{loading:true},'Publicando…'),
+  h(P.Button,{disabled:true},'Publicar versão')));
+</script>
+</body>
+</html>
