@@ -1,0 +1,68 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font: var(--text-label);
+  color: var(--ink);
+}
+
+.control {
+  position: relative;
+  display: flex;
+}
+
+.icon {
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+
+.input {
+  flex: 1;
+  min-height: var(--control-height);
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- 10px vem do design system (bundle.css), sem token */
+  padding-block: 10px;
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-md);
+  border: var(--border-hairline) solid var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font: var(--text-body-lg);
+}
+
+.hasIcon {
+  padding-inline-start: 44px;
+}
+
+.input::placeholder {
+  color: var(--ink-muted);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.error .input {
+  border-color: var(--danger);
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.hintError {
+  color: var(--danger);
+}

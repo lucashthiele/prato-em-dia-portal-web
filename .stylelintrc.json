@@ -1,0 +1,42 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "plugins": ["stylelint-declaration-strict-value"],
+  "ignoreFiles": ["src/styles/tokens.css"],
+  "rules": {
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "scale-unlimited/declaration-strict-value": [
+      [
+        "/color$/",
+        "background",
+        "background-color",
+        "fill",
+        "stroke",
+        "border-radius",
+        "padding",
+        "margin",
+        "gap",
+        "row-gap",
+        "column-gap",
+        "font",
+        "font-family",
+        "font-size"
+      ],
+      {
+        "ignoreValues": [
+          "currentColor",
+          "transparent",
+          "inherit",
+          "initial",
+          "unset",
+          "none",
+          "0",
+          "auto",
+          "/^var\\(/"
+        ],
+        "ignoreFunctions": true,
+        "disableFix": true
+      }
+    ]
+  }
+}

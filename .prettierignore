@@ -1,0 +1,8 @@
+dist
+.yarn
+yarn.lock
+design-system
+prototipos
+src/shared/api/schema.d.ts
+.claude
+docs

@@ -50,10 +50,12 @@ Fluxo:
 3. Se o usuário pedir ajustes, atualize o plano e valide novamente.
 4. Só então implemente, seguindo o plano aprovado. Se surgir algo que o invalide, pare e alinhe antes de continuar.
 
+## Correção de ADRs
+
+Se durante o trabalho um ADR em `docs/adr/` (ou `docs/arquitetura.md`) se mostrar incorreto, desatualizado ou incompatível com a realidade (por exemplo, formato de erro do backend ou versão de biblioteca), você pode propor a correção, mas **nunca a aplique sem aprovação explícita do usuário**. Descreva o que muda e por quê, aguarde a aprovação e só então edite. Enquanto isso, siga o ADR vigente ou registre o desvio no plano e no PR.
+
 ## Contrato com o backend
 
 Os tipos da API são gerados a partir do OpenAPI do backend (`/v3/api-docs`) e ficam versionados no repositório. Ao desenvolver qualquer funcionalidade que dependa do contrato com o backend (rotas, payloads, erros, enums), rode `yarn api:generate` **antes** de desenhar a solução e de montar o plano. Assim o plano parte do contrato atual, não de suposição. Se o diff dos tipos gerados mostrar mudança de contrato, trate-a no plano como risco ou ponto em aberto.
 
 Nunca escreva à mão tipos de request ou response que o OpenAPI já cobre. Se o backend ainda não expõe o que a funcionalidade precisa, registre a lacuna no plano em vez de contornar no portal.
-
-> O script `api:generate` será criado no setup inicial (LUC-13).
