@@ -20,7 +20,7 @@ Quase todo o estado do portal vem do servidor: pacientes, versões de prescriç�
 - instância do cliente e URL base;
 - cabeçalho `Authorization` a partir da sessão;
 - renovação do token em `401` e uma nova tentativa;
-- conversão de corpos Problem Details em um `ApiError` tipado (status, código, erros por campo);
+- conversão do corpo de erro do backend, `{status, code, message, errors[{field, code, message}]}` (não é Problem Details; o OpenAPI não documenta essas respostas), em um `ApiError` tipado (status, código, erros por campo); falha sem resposta vira `ApiError` com status `0`;
 - os tipos gerados.
 
 Cada feature monta as suas requisições: em `features/<feature>/api/` ficam as funções que escolhem rota, parâmetros e corpo, o mapeamento da resposta para o que a interface precisa e os hooks do TanStack Query. Features não chamam `fetch` nem tratam cabeçalhos e status HTTP diretamente; a regra é verificada por lint (ver [0006](0006-estrutura-e-fronteiras.md)).
