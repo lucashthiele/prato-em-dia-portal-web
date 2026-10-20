@@ -2,7 +2,7 @@
 
 Visão geral das decisões técnicas do portal do nutricionista. Cada decisão tem um ADR com contexto, consequências e alternativas descartadas. O comportamento de produto está em `../docs/Portal do Nutricionista — Referência de Produto MVP.md`, fora deste repositório.
 
-**Estado:** documentação das decisões. O código (setup e primeira tela) ainda não existe e será feito em outro ticket.
+**Estado:** o setup técnico está feito (LUC-13): Yarn 4, Vite, lint, testes, CI, cliente tipado e uma tela de login temporária com botão Sair. Login definitivo, `/me` e o Início dentro do shell vêm em outro ticket.
 
 ## Stack
 
@@ -52,7 +52,7 @@ Verificadas por `eslint-plugin-boundaries` no lint e no CI:
 1. A **página** (fina) compõe componentes da feature e chama um hook de query, por exemplo `usePatients()`.
 2. O **hook** (`features/patients/api/`) usa o TanStack Query. A chave inclui o id do paciente quando há um.
 3. A **função da feature** escolhe rota, parâmetros e corpo e chama o cliente tipado de `shared/api`, por exemplo `client.GET("/nutritionists/me/patients", ...)`.
-4. O **cliente** (`shared/api`) anexa o `Authorization`, renova o token em `401` e converte erros Problem Details em `ApiError`.
+4. O **cliente** (`shared/api`) anexa o `Authorization`, renova o token em `401` e converte o corpo de erro do backend em `ApiError`.
 5. O pedido sai para `/api/v1/...` na **mesma origem**. No desenvolvimento o Vite faz o proxy; em produção o proxy reverso encaminha ao Spring Boot.
 6. A feature **mapeia a resposta** para o que a interface precisa (por exemplo, enums para rótulos) e a página renderiza os componentes de `shared/ui`.
 
@@ -65,4 +65,5 @@ Os tipos vêm de `/v3/api-docs` e são versionados. Antes de planejar uma funcio
 - **LUC-54:** mover a sessão para cookies `HttpOnly` (backend e portal). Bloqueia o release em produção.
 - **Backend:** o endpoint `POST /api/v1/identity/useraccounts` não deve ser usado pelo portal sem autorização administrativa no servidor (ver a referência de produto, seção 2.1).
 - **Design system:** mudanças em `design-system/` geram um ticket de acompanhamento no front-end. Não há sincronização automática.
-- **Setup e primeira tela:** Login, `/me`, Início dentro do shell com `SideNav`, em outro ticket.
+- **Primeira tela:** Login definitivo, `/me`, Início dentro do shell com `SideNav` e renovação de token em `401`, em outro ticket.
+- **Erros da API:** o OpenAPI não documenta as respostas de erro do backend; o `ApiError` segue o corpo real (ver [0002](adr/0002-estado-do-servidor-e-cliente-http.md)).

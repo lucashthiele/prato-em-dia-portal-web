@@ -10,7 +10,7 @@ A pasta `design-system/` traz README, tokens (`tokens.json`, `tokens.css`), uma 
 
 - **`design-system/` é só referência de design.** O app **nunca importa** nada dessa pasta. Ela serve para decisões de design e para ler comportamento, props e estados dos componentes.
 - O app tem seus próprios tokens em `src/styles/tokens.css` (variáveis CSS, tema escuro em `[data-theme="dark"]`), escritos à mão a partir de `design-system/tokens.json`.
-- Os componentes são portados para `shared/ui` em TypeScript, mantendo nomes, props, estados e valores, com **CSS Modules** (um arquivo por componente) usando só `var(--token)`.
+- Os componentes são portados para `shared/ui` em TypeScript, mantendo nomes, props, estados e valores, com **CSS Modules** (um arquivo por componente) usando só `var(--token)`. `clsx` junta as classes condicionais.
 - **Sem Tailwind, sem biblioteca de componentes visuais, sem CSS-in-JS em runtime.** O Stylelint proíbe cor, espaçamento, raio e fonte soltos no CSS dos componentes.
 - **Divergência é aceita.** Quando `design-system/` mudar, um ticket de acompanhamento atualiza o front-end. Não há script de geração nem verificação automática entre as pastas.
 
