@@ -17,6 +17,10 @@
   color: var(--ink);
 }
 
+.danger {
+  color: var(--danger);
+}
+
 .unit {
   font: var(--text-subtitle);
 }

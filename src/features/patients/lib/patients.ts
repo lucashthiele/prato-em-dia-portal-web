@@ -11,10 +11,9 @@ export function deliveryStatus(patient: Patient): Status | undefined {
   return patient.emailDeliveryStatus ? DELIVERY_STATUS[patient.emailDeliveryStatus] : undefined;
 }
 
-/** Acesso que o nutricionista precisa acompanhar: envio pendente ou com falha. */
-export function hasAccessProblem(patient: Patient): boolean {
-  const status = deliveryStatus(patient);
-  return status === "pending" || status === "failed";
+/** Acesso com falha no envio: o único que o nutricionista precisa resolver. */
+export function hasAccessFailure(patient: Patient): boolean {
+  return deliveryStatus(patient) === "failed";
 }
 
 export function mostRecent(patients: Patient[], limit: number): Patient[] {

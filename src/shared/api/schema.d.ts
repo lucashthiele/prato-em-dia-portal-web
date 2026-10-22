@@ -688,6 +688,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/nutritionists/me/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resumo do nutricionista
+         * @description Retorna contagens (pacientes ativos, acessos pendentes e com falha, rascunhos em aberto) e os rascunhos de prescrição mais recentes, considerando somente pacientes com vínculo ativo.
+         */
+        get: operations["get_6"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/nutritionists/me/patients/{patientId}": {
         parameters: {
             query?: never;
@@ -699,7 +719,7 @@ export interface paths {
          * Consultar paciente
          * @description Retorna os detalhes do vínculo com o paciente informado.
          */
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1274,6 +1294,34 @@ export interface components {
             start?: string;
             /** Format: date */
             end?: string;
+        };
+        Counts: {
+            /** Format: int64 */
+            activePatients?: number;
+            /** Format: int64 */
+            pendingAccess?: number;
+            /** Format: int64 */
+            failedAccess?: number;
+            /** Format: int64 */
+            openDrafts?: number;
+        };
+        DraftToContinue: {
+            /** Format: uuid */
+            patientId?: string;
+            patientFullName?: string;
+            /** Format: uuid */
+            prescriptionId?: string;
+            /** Format: uuid */
+            versionId?: string;
+            title?: string;
+            /** Format: int32 */
+            versionNumber?: number;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        NutritionistSummaryOutput: {
+            counts?: components["schemas"]["Counts"];
+            drafts?: components["schemas"]["DraftToContinue"][];
         };
         PageResultRelationshipOutput: {
             content?: components["schemas"]["RelationshipOutput"][];
@@ -2445,6 +2493,28 @@ export interface operations {
         };
     };
     get_6: {
+        parameters: {
+            query?: {
+                draftLimit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NutritionistSummaryOutput"];
+                };
+            };
+        };
+    };
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
