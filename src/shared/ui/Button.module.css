@@ -98,3 +98,7 @@
     animation-duration: 2.4s;
   }
 }
+
+.fullWidth {
+  width: 100%;
+}
