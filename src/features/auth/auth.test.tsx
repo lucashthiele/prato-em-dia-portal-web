@@ -85,7 +85,7 @@ describe("login", () => {
     renderApp("/login");
     await fillAndSubmit("nutri@exemplo.com", "errada");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("E-mail ou senha inválidos");
+    expect(await screen.findByRole("alert")).toHaveTextContent("E-mail ou senha incorretos");
     expect(readSession()).toBeNull();
   });
 
