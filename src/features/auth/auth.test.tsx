@@ -6,7 +6,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { components } from "../../shared/api";
 import { server } from "../../test/server";
-import { ConnectedPage, LoginPage, RedirectIfSession, RequireSession, SessionProvider } from ".";
+import { LoginPage, RedirectIfSession, RequireSession, SessionProvider, useLogout, useMe } from ".";
 import { readSession, writeSession } from "./session-storage";
 
 type AuthenticationResponse = components["schemas"]["AuthenticationResponse"];
@@ -19,11 +19,21 @@ const tokens: AuthenticationResponse = {
   passwordChangeRequired: false,
 };
 
+function Connected() {
+  const logout = useLogout();
+  return (
+    <>
+      <h1>Você está conectado</h1>
+      <button onClick={() => logout.mutate()}>Sair</button>
+    </>
+  );
+}
+
 function renderApp(initialPath: string) {
   const router = createMemoryRouter(
     [
       { element: <RedirectIfSession />, children: [{ path: "/login", element: <LoginPage /> }] },
-      { element: <RequireSession />, children: [{ path: "/", element: <ConnectedPage /> }] },
+      { element: <RequireSession />, children: [{ path: "/", element: <Connected /> }] },
     ],
     { initialEntries: [initialPath] },
   );
@@ -150,6 +160,83 @@ describe("sessão", () => {
     const router = renderApp("/");
 
     await userEvent.setup().click(screen.getByRole("button", { name: "Sair" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
+    expect(readSession()).toBeNull();
+  });
+});
+
+describe("token nas requisições", () => {
+  function Probe() {
+    const me = useMe();
+    return <p>{me.data?.fullName ?? (me.isError ? "erro" : "carregando")}</p>;
+  }
+
+  function renderProbe() {
+    const router = createMemoryRouter(
+      [
+        { element: <RedirectIfSession />, children: [{ path: "/login", element: <LoginPage /> }] },
+        { element: <RequireSession />, children: [{ path: "/", element: <Probe /> }] },
+      ],
+      { initialEntries: ["/"] },
+    );
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <SessionProvider>
+          <RouterProvider router={router} />
+        </SessionProvider>
+      </QueryClientProvider>,
+    );
+    return router;
+  }
+
+  it("envia o access token", async () => {
+    let header: string | null = null;
+    server.use(
+      http.get("*/api/v1/me", ({ request }) => {
+        header = request.headers.get("Authorization");
+        return HttpResponse.json({ fullName: "Marina" });
+      }),
+    );
+    writeSession({ accessToken: "a1", refreshToken: "r1" });
+    renderProbe();
+
+    expect(await screen.findByText("Marina")).toBeInTheDocument();
+    expect(header).toBe("Bearer a1");
+  });
+
+  it("renova o token em 401, repete o pedido e guarda a nova sessão", async () => {
+    const seen: (string | null)[] = [];
+    server.use(
+      http.get("*/api/v1/me", ({ request }) => {
+        const auth = request.headers.get("Authorization");
+        seen.push(auth);
+        return auth === "Bearer a2"
+          ? HttpResponse.json({ fullName: "Marina" })
+          : new HttpResponse(null, { status: 401 });
+      }),
+      http.post("*/api/v1/auth/refresh", async ({ request }) => {
+        expect(await request.json()).toEqual({ refreshToken: "r1" });
+        return HttpResponse.json({ ...tokens, accessToken: "a2", refreshToken: "r2" });
+      }),
+    );
+    writeSession({ accessToken: "a1", refreshToken: "r1" });
+    renderProbe();
+
+    expect(await screen.findByText("Marina")).toBeInTheDocument();
+    expect(seen).toEqual(["Bearer a1", "Bearer a2"]);
+    expect(readSession()).toEqual({ accessToken: "a2", refreshToken: "r2" });
+  });
+
+  it("volta ao login quando a renovação falha", async () => {
+    server.use(
+      http.get("*/api/v1/me", () => new HttpResponse(null, { status: 401 })),
+      http.post("*/api/v1/auth/refresh", () => new HttpResponse(null, { status: 401 })),
+    );
+    writeSession({ accessToken: "a1", refreshToken: "r1" });
+    const router = renderProbe();
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
     expect(readSession()).toBeNull();

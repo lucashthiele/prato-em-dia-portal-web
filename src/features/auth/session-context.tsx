@@ -1,4 +1,13 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { configureSession } from "../../shared/api";
 import { clearSession, readSession, writeSession, type StoredSession } from "./session-storage";
 
 interface SessionContextValue {
@@ -21,6 +30,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     clearSession();
     setSession(null);
   }, []);
+
+  // Layout effect: roda antes dos efeitos das queries filhas, que já precisam do token.
+  useLayoutEffect(() => {
+    configureSession({ getTokens: readSession, onRefreshed: signIn, onExpired: signOut });
+    return () => configureSession(null);
+  }, [signIn, signOut]);
 
   const value = useMemo(() => ({ session, signIn, signOut }), [session, signIn, signOut]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
