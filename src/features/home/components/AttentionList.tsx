@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { Button } from "../../../shared/ui";
 import type { Patient } from "../../patients";
 import { PatientRow } from "./PatientRow";
@@ -11,9 +12,14 @@ interface AttentionListProps {
 export function AttentionList({ patients, onResend }: AttentionListProps) {
   return (
     <section aria-labelledby="home-attention">
-      <h2 id="home-attention" className={styles.title}>
-        Precisam de atenção
-      </h2>
+      <div className={styles.head}>
+        <h2 id="home-attention" className={styles.title}>
+          Precisam de atenção
+        </h2>
+        <Link className={styles.more} to="/pacientes?acesso=falha">
+          Ver todos
+        </Link>
+      </div>
       <ul className={styles.card}>
         {patients.map((patient) => (
           <PatientRow

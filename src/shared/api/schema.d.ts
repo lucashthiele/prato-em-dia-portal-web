@@ -329,7 +329,7 @@ export interface paths {
         };
         /**
          * Listar pacientes
-         * @description Retorna uma página dos pacientes vinculados ao nutricionista.
+         * @description Retorna uma página dos pacientes vinculados ao nutricionista. Todos os filtros são opcionais, combinam entre si e `totalElements` reflete o filtro aplicado.
          */
         get: operations["list_1"];
         put?: never;
@@ -1935,6 +1935,14 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Busca por nome (sem distinção de maiúsculas e acentos) ou e-mail. Texto em branco é ignorado. */
+                q?: string;
+                /** @description Filtra pelo status do envio do e-mail de acesso. */
+                emailDeliveryStatus?: "PENDING" | "SENT" | "FAILED";
+                /** @description Quando true, retorna apenas pacientes com uma versão de prescrição em rascunho. */
+                hasOpenDraft?: boolean;
+                /** @description Ordenação: createdAt,desc (padrão), createdAt,asc ou fullName,asc. */
+                sort?: "createdAt,desc" | "createdAt,asc" | "fullName,asc";
             };
             header?: never;
             path?: never;

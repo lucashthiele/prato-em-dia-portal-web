@@ -15,9 +15,3 @@ export function deliveryStatus(patient: Patient): Status | undefined {
 export function hasAccessFailure(patient: Patient): boolean {
   return deliveryStatus(patient) === "failed";
 }
-
-export function mostRecent(patients: Patient[], limit: number): Patient[] {
-  return [...patients]
-    .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
-    .slice(0, limit);
-}

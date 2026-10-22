@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { LoginPage, RequireSession, RedirectIfSession } from "../features/auth";
 import { HomePage } from "../features/home";
+import { PatientsListPage } from "../features/patients";
 import { ComingSoon } from "./ComingSoon";
 import { Shell } from "./Shell";
 
@@ -16,7 +17,8 @@ export const routes = [
         element: <Shell />,
         children: [
           { path: "/", element: <HomePage /> },
-          // Rotas reservadas até os tickets de Pacientes e Perfil.
+          { path: "/pacientes", element: <PatientsListPage /> },
+          // Rotas reservadas até os tickets de detalhe do paciente e Perfil.
           { path: "/pacientes/*", element: <ComingSoon title="Pacientes" /> },
           { path: "/perfil", element: <ComingSoon title="Perfil e conta" /> },
         ],

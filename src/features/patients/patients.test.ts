@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deliveryStatus, hasAccessFailure, mostRecent } from ".";
+import { deliveryStatus, hasAccessFailure } from ".";
 
 describe("pacientes", () => {
   it("mapeia o estado de envio do e-mail sem expor o enum", () => {
@@ -13,14 +13,5 @@ describe("pacientes", () => {
     expect(hasAccessFailure({ emailDeliveryStatus: "PENDING" })).toBe(false);
     expect(hasAccessFailure({ emailDeliveryStatus: "FAILED" })).toBe(true);
     expect(hasAccessFailure({ emailDeliveryStatus: "SENT" })).toBe(false);
-  });
-
-  it("ordena do mais novo ao mais antigo e limita", () => {
-    const patients = [
-      { patientFullName: "A", createdAt: "2026-10-01T00:00:00Z" },
-      { patientFullName: "C", createdAt: "2026-10-03T00:00:00Z" },
-      { patientFullName: "B", createdAt: "2026-10-02T00:00:00Z" },
-    ];
-    expect(mostRecent(patients, 2).map((p) => p.patientFullName)).toEqual(["C", "B"]);
   });
 });
