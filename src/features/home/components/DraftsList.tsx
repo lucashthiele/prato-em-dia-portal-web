@@ -15,9 +15,14 @@ interface DraftsListProps {
 export function DraftsList({ drafts, total }: DraftsListProps) {
   return (
     <section aria-labelledby="home-drafts">
-      <h2 id="home-drafts" className={section.title}>
-        Rascunhos para continuar
-      </h2>
+      <div className={section.head}>
+        <h2 id="home-drafts" className={section.title}>
+          Rascunhos para continuar
+        </h2>
+        <Link className={section.more} to="/pacientes?filtro=rascunhos">
+          Ver todos
+        </Link>
+      </div>
       <ul className={section.card}>
         {drafts.map((draft) => (
           <li key={draft.versionId} className={styles.item}>

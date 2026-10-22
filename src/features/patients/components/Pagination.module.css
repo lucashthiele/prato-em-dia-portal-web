@@ -1,0 +1,11 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.position {
+  color: var(--ink-muted);
+  font: var(--text-body);
+}

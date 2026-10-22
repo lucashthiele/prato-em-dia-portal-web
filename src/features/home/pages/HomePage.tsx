@@ -3,13 +3,7 @@ import { useNavigate } from "react-router";
 import { ApiError } from "../../../shared/api";
 import { Alert, Button, ConfirmDialog, EmptyState } from "../../../shared/ui";
 import { useMe } from "../../auth";
-import {
-  hasAccessFailure,
-  mostRecent,
-  usePatients,
-  useResendAccess,
-  type Patient,
-} from "../../patients";
+import { usePatients, useResendAccess, type Patient } from "../../patients";
 import { useNutritionistSummary } from "../api/summary";
 import { AttentionList } from "../components/AttentionList";
 import { DraftsList } from "../components/DraftsList";
@@ -18,6 +12,7 @@ import { RecentPatients } from "../components/RecentPatients";
 import styles from "./HomePage.module.css";
 
 const RECENT_LIMIT = 5;
+const ATTENTION_LIMIT = 5;
 
 function firstName(fullName?: string) {
   return fullName?.trim().split(/\s+/)[0];
@@ -35,14 +30,15 @@ function AddPatientButton() {
 export function HomePage() {
   const me = useMe();
   const summary = useNutritionistSummary();
-  const patients = usePatients();
+  const recent = usePatients({ size: RECENT_LIMIT, sort: "createdAt,desc" });
+  const attention = usePatients({ size: ATTENTION_LIMIT, emailDeliveryStatus: "FAILED" });
   const resend = useResendAccess();
   const [target, setTarget] = useState<Patient | null>(null);
   const [resentTo, setResentTo] = useState<string | null>(null);
 
   const name = firstName(me.data?.fullName);
   const data = summary.data;
-  const needsAttention = patients.data?.patients.filter(hasAccessFailure) ?? [];
+  const needsAttention = attention.data?.patients ?? [];
 
   function confirmResend() {
     if (!target?.patientId) return;
@@ -109,9 +105,7 @@ export function HomePage() {
               }}
             />
           ) : null}
-          {patients.data ? (
-            <RecentPatients patients={mostRecent(patients.data.patients, RECENT_LIMIT)} />
-          ) : null}
+          {recent.data ? <RecentPatients patients={recent.data.patients} /> : null}
         </>
       )}
 

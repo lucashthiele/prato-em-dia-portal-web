@@ -1,28 +1,33 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { client, type components } from "../../../shared/api";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { client, type components, type paths } from "../../../shared/api";
 
 export type Patient = components["schemas"]["RelationshipOutput"];
 
-// O backend ainda não filtra nem ordena a listagem (LUC-57); o portal carrega uma página
-// grande e trabalha sobre ela.
-export const PATIENTS_PAGE_SIZE = 50;
+export type PatientsQuery = NonNullable<
+  paths["/api/v1/nutritionists/me/patients"]["get"]["parameters"]["query"]
+>;
 
 export interface PatientsPage {
   patients: Patient[];
+  /** Total que atende ao filtro aplicado, não o total de pacientes. */
   total: number;
+  totalPages: number;
 }
 
-export function usePatients() {
+export function usePatients(query: PatientsQuery = {}) {
   return useQuery({
-    queryKey: ["patients", { page: 0, size: PATIENTS_PAGE_SIZE }],
+    queryKey: ["patients", query],
+    // Mantém a página anterior na tela enquanto a nova carrega (busca, filtros, paginação).
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<PatientsPage> => {
       const { data } = await client.GET("/api/v1/nutritionists/me/patients", {
-        params: { query: { page: 0, size: PATIENTS_PAGE_SIZE } },
+        params: { query },
       });
       const patients = data?.content ?? [];
       return {
         patients,
         total: data?.totalElements ?? patients.length,
+        totalPages: data?.totalPages ?? 1,
       };
     },
   });

@@ -2,7 +2,7 @@
 
 Visão geral das decisões técnicas do portal do nutricionista. Cada decisão tem um ADR com contexto, consequências e alternativas descartadas. O comportamento de produto está em `../docs/Portal do Nutricionista — Referência de Produto MVP.md`, fora deste repositório.
 
-**Estado:** o setup técnico está feito (LUC-13): Yarn 4, Vite, lint, testes, CI, cliente tipado e login temporário. O LUC-56 entregou o shell (`SideNav`), o Início, o envio do token e a renovação em `401` no cliente. Pacientes, Perfil e o login definitivo vêm em outros tickets; `/pacientes` e `/perfil` são rotas reservadas.
+**Estado:** o setup técnico está feito (LUC-13): Yarn 4, Vite, lint, testes, CI, cliente tipado e login temporário. O LUC-56 entregou o shell (`SideNav`), o Início, o envio do token e a renovação em `401` no cliente. O LUC-60 entregou a lista de Pacientes (busca, filtros, ordenação e paginação no servidor, estado na URL). Detalhe do paciente, Perfil e o login definitivo vêm em outros tickets; `/pacientes/*` (exceto a lista) e `/perfil` são rotas reservadas.
 
 ## Stack
 
@@ -27,7 +27,7 @@ src/
   app/            roteador, providers (QueryClient, sessão), shell (SideNav + coluna de conteúdo)
   features/
     auth/         login, contexto de sessão, armazenamento de tokens
-    patients/     api/ components/ pages/ hooks/
+    patients/     api/ components/ lib/ pages/: lista, filtros na URL, reenvio de acesso
     home/         Início: tiles, acessos que precisam de atenção, pacientes recentes
     prescriptions/
     tracking/
@@ -67,5 +67,5 @@ Os tipos vêm de `/v3/api-docs` e são versionados. Antes de planejar uma funcio
 - **Backend:** o endpoint `POST /api/v1/identity/useraccounts` não deve ser usado pelo portal sem autorização administrativa no servidor (ver a referência de produto, seção 2.1).
 - **Design system:** mudanças em `design-system/` geram um ticket de acompanhamento no front-end. Não há sincronização automática.
 - **Login definitivo:** tela de login final e o aviso discreto de sessão expirada com retorno à URL de destino (ADR 0007), em outro ticket. Hoje, se a renovação falha, o usuário só volta ao `/login`.
-- **Backend para o Início:** o resumo agregado (LUC-58) alimenta as métricas e os rascunhos. A lista "Precisam de atenção" e "Pacientes recentes" ainda usam uma página de 50 pacientes e dependem do LUC-57 (filtros e ordenação da listagem); por isso a lista de falhas pode divergir do contador `failedAccess` com mais de 50 pacientes.
+- **Design system:** a paginação (Anterior/Próxima) e os chips de filtro da lista de Pacientes foram criados em `features/patients` sem equivalente em `design-system/`; falta um ticket de acompanhamento para formalizá-los.
 - **Erros da API:** o OpenAPI não documenta as respostas de erro do backend; o `ApiError` segue o corpo real (ver [0002](adr/0002-estado-do-servidor-e-cliente-http.md)).

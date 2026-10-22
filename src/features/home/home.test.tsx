@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -56,15 +56,23 @@ function mockApi(content: Patient[], data: Summary = summary({ activePatients: c
   server.use(
     http.get("*/api/v1/me", () => HttpResponse.json({ fullName: "Marina Souza Lima" })),
     http.get("*/api/v1/nutritionists/me/summary", () => HttpResponse.json(data)),
-    http.get("*/api/v1/nutritionists/me/patients", () =>
-      HttpResponse.json({
-        content,
+    // Filtra e ordena como o backend, pelos parâmetros recebidos.
+    http.get("*/api/v1/nutritionists/me/patients", ({ request }) => {
+      const query = new URL(request.url).searchParams;
+      const status = query.get("emailDeliveryStatus");
+      const size = Number(query.get("size") ?? 20);
+      let result = content.filter((p) => !status || p.emailDeliveryStatus === status);
+      if (query.get("sort") === "createdAt,desc") {
+        result = [...result].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+      }
+      return HttpResponse.json({
+        content: result.slice(0, size),
         page: 0,
-        size: 50,
-        totalElements: content.length,
+        size,
+        totalElements: result.length,
         totalPages: 1,
-      }),
-    ),
+      });
+    }),
   );
 }
 
@@ -112,7 +120,11 @@ describe("Início", () => {
     const router = renderHome();
 
     const list = await screen.findByRole("region", { name: "Rascunhos para continuar" });
-    const links = within(list).getAllByRole("link");
+    const links = within(list).getAllByRole("link", { name: /Paciente/ });
+    expect(within(list).getByRole("link", { name: "Ver todos" })).toHaveAttribute(
+      "href",
+      "/pacientes?filtro=rascunhos",
+    );
     expect(links.map((l) => l.textContent)).toEqual([
       expect.stringContaining("Paciente 2"),
       expect.stringContaining("Paciente 1"),
@@ -163,6 +175,27 @@ describe("Início", () => {
 
     await screen.findByRole("region", { name: "Pacientes recentes" });
     expect(screen.queryByRole("region", { name: "Precisam de atenção" })).not.toBeInTheDocument();
+  });
+
+  it("pede ao servidor só os recentes e só as falhas, sem filtrar no cliente", async () => {
+    const queries: URLSearchParams[] = [];
+    mockApi([patient(1)]);
+    server.use(
+      http.get("*/api/v1/nutritionists/me/patients", ({ request }) => {
+        queries.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ content: [], totalElements: 0, totalPages: 0 });
+      }),
+    );
+    renderHome();
+
+    await screen.findByRole("heading", { name: "Olá, Marina" });
+    await waitFor(() => expect(queries).toHaveLength(2));
+    expect(queries.map((q) => Object.fromEntries(q))).toEqual(
+      expect.arrayContaining([
+        { size: "5", sort: "createdAt,desc" },
+        { size: "5", emailDeliveryStatus: "FAILED" },
+      ]),
+    );
   });
 
   it("reenvia o acesso depois de confirmar", async () => {
