@@ -1,4 +1,5 @@
 export { SessionProvider, useSession } from "./session-context";
 export { RedirectIfSession, RequireSession } from "./RouteGuards";
-export { ConnectedPage } from "./pages/ConnectedPage";
+export { useLogout } from "./api/auth";
+export { useMe } from "./api/me";
 export { LoginPage } from "./pages/LoginPage";

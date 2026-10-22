@@ -19,7 +19,7 @@ Quase todo o estado do portal vem do servidor: pacientes, versões de prescriç�
 
 - instância do cliente e URL base;
 - cabeçalho `Authorization` a partir da sessão;
-- renovação do token em `401` e uma nova tentativa;
+- renovação do token em `401` e uma nova tentativa (uma renovação por vez; pedidos que falham juntos esperam a mesma). `shared/api` não importa de `features`: a sessão é registrada por `features/auth` com `configureSession({getTokens, onRefreshed, onExpired})`;
 - conversão do corpo de erro do backend, `{status, code, message, errors[{field, code, message}]}` (não é Problem Details; o OpenAPI não documenta essas respostas), em um `ApiError` tipado (status, código, erros por campo); falha sem resposta vira `ApiError` com status `0`;
 - os tipos gerados.
 

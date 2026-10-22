@@ -1,0 +1,30 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 26px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  font: var(--text-overline);
+  white-space: nowrap;
+}
+
+.success {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.warm {
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+.danger {
+  background: var(--danger-container);
+  color: var(--on-danger-container);
+}
+
+.neutral {
+  background: var(--surface-container);
+  color: var(--ink-muted);
+}

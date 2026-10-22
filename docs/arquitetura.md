@@ -2,7 +2,7 @@
 
 Visão geral das decisões técnicas do portal do nutricionista. Cada decisão tem um ADR com contexto, consequências e alternativas descartadas. O comportamento de produto está em `../docs/Portal do Nutricionista — Referência de Produto MVP.md`, fora deste repositório.
 
-**Estado:** o setup técnico está feito (LUC-13): Yarn 4, Vite, lint, testes, CI, cliente tipado e uma tela de login temporária com botão Sair. Login definitivo, `/me` e o Início dentro do shell vêm em outro ticket.
+**Estado:** o setup técnico está feito (LUC-13): Yarn 4, Vite, lint, testes, CI, cliente tipado e login temporário. O LUC-56 entregou o shell (`SideNav`), o Início, o envio do token e a renovação em `401` no cliente. Pacientes, Perfil e o login definitivo vêm em outros tickets; `/pacientes` e `/perfil` são rotas reservadas.
 
 ## Stack
 
@@ -24,10 +24,11 @@ Visão geral das decisões técnicas do portal do nutricionista. Cada decisão t
 
 ```
 src/
-  app/            roteador, providers (QueryClient, sessão), layout do shell
+  app/            roteador, providers (QueryClient, sessão), shell (SideNav + coluna de conteúdo)
   features/
     auth/         login, contexto de sessão, armazenamento de tokens
     patients/     api/ components/ pages/ hooks/
+    home/         Início: tiles, acessos que precisam de atenção, pacientes recentes
     prescriptions/
     tracking/
     profile/
@@ -52,7 +53,7 @@ Verificadas por `eslint-plugin-boundaries` no lint e no CI:
 1. A **página** (fina) compõe componentes da feature e chama um hook de query, por exemplo `usePatients()`.
 2. O **hook** (`features/patients/api/`) usa o TanStack Query. A chave inclui o id do paciente quando há um.
 3. A **função da feature** escolhe rota, parâmetros e corpo e chama o cliente tipado de `shared/api`, por exemplo `client.GET("/nutritionists/me/patients", ...)`.
-4. O **cliente** (`shared/api`) anexa o `Authorization`, renova o token em `401` e converte o corpo de erro do backend em `ApiError`.
+4. O **cliente** (`shared/api`) anexa o `Authorization`, renova o token em `401` (uma renovação por vez, repetindo o pedido) e converte o corpo de erro do backend em `ApiError`. Ele não conhece a sessão: `features/auth` a registra com `configureSession` (ler tokens, guardar os renovados, encerrar a sessão).
 5. O pedido sai para `/api/v1/...` na **mesma origem**. No desenvolvimento o Vite faz o proxy; em produção o proxy reverso encaminha ao Spring Boot.
 6. A feature **mapeia a resposta** para o que a interface precisa (por exemplo, enums para rótulos) e a página renderiza os componentes de `shared/ui`.
 
@@ -65,5 +66,6 @@ Os tipos vêm de `/v3/api-docs` e são versionados. Antes de planejar uma funcio
 - **LUC-54:** mover a sessão para cookies `HttpOnly` (backend e portal). Bloqueia o release em produção.
 - **Backend:** o endpoint `POST /api/v1/identity/useraccounts` não deve ser usado pelo portal sem autorização administrativa no servidor (ver a referência de produto, seção 2.1).
 - **Design system:** mudanças em `design-system/` geram um ticket de acompanhamento no front-end. Não há sincronização automática.
-- **Primeira tela:** Login definitivo, `/me`, Início dentro do shell com `SideNav` e renovação de token em `401`, em outro ticket.
+- **Login definitivo:** tela de login final e o aviso discreto de sessão expirada com retorno à URL de destino (ADR 0007), em outro ticket. Hoje, se a renovação falha, o usuário só volta ao `/login`.
+- **Backend para o Início:** o Início conta e ordena sobre uma página de 50 pacientes e o tile de rascunhos é um stub. Dependem de LUC-57 (filtros e ordenação da listagem) e LUC-58 (resumo agregado).
 - **Erros da API:** o OpenAPI não documenta as respostas de erro do backend; o `ApiError` segue o corpo real (ver [0002](adr/0002-estado-do-servidor-e-cliente-http.md)).
