@@ -15,7 +15,8 @@ function bannerMessage(error: unknown): string {
       return "Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.";
     }
     // Credencial inválida: sem indicar se o e-mail existe.
-    if (error.status === 401) return "E-mail ou senha inválidos. Confira os dados e tente de novo.";
+    if (error.status === 401)
+      return "E-mail ou senha incorretos. Confira os dados e tente novamente.";
     if (error.status === 400) return "Revise os campos destacados e tente de novo.";
   }
   return "Não foi possível entrar agora. Tente de novo em instantes.";
@@ -34,9 +35,17 @@ export function LoginPage() {
   return (
     <main className={styles.page}>
       <div className={styles.card}>
-        <img className={styles.logo} src="/prato_em_dia_logo.png" alt="Prato em Dia" />
-        <h1 className={styles.title}>Entrar no portal</h1>
-        <p className={styles.lead}>Acompanhe seus pacientes e publique prescrições.</p>
+        <div className={styles.brand}>
+          <img className={styles.brandMark} src="/prato_em_dia_logo.png" alt="" />
+          <div>
+            <div className={styles.brandName}>Prato em Dia</div>
+            <div className={styles.brandSub}>Portal Pro Nutri</div>
+          </div>
+        </div>
+        <div>
+          <h1 className={styles.heading}>Entrar</h1>
+          <p className={styles.subhead}>Acesse seus pacientes e prescrições.</p>
+        </div>
         {login.isError ? <Alert tone="danger">{bannerMessage(login.error)}</Alert> : null}
         <form className={styles.form} onSubmit={handleSubmit} noValidate>
           <TextField
@@ -55,10 +64,14 @@ export function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
             error={fieldError(login.error, "password")}
           />
-          <Button type="submit" loading={login.isPending}>
+          <Button type="submit" fullWidth loading={login.isPending}>
             Entrar
           </Button>
         </form>
+        <p className={styles.footnote}>
+          Seu acesso é criado pela equipe do Prato em Dia. Se perdeu a senha, peça uma nova
+          credencial à administração.
+        </p>
       </div>
     </main>
   );
