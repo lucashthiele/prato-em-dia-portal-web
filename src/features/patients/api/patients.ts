@@ -10,8 +10,6 @@ export const PATIENTS_PAGE_SIZE = 50;
 export interface PatientsPage {
   patients: Patient[];
   total: number;
-  /** Há pacientes além da página carregada, então contagens derivadas dela são parciais. */
-  partial: boolean;
 }
 
 export function usePatients() {
@@ -25,7 +23,6 @@ export function usePatients() {
       return {
         patients,
         total: data?.totalElements ?? patients.length,
-        partial: (data?.totalPages ?? 1) > 1,
       };
     },
   });
@@ -39,6 +36,11 @@ export function useResendAccess() {
         params: { path: { patientId } },
       });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["patients"] }),
+    // O resumo do Início também conta acessos com falha.
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["patients"] }),
+        queryClient.invalidateQueries({ queryKey: ["nutritionist-summary"] }),
+      ]),
   });
 }

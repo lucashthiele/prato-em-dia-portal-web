@@ -67,5 +67,5 @@ Os tipos vêm de `/v3/api-docs` e são versionados. Antes de planejar uma funcio
 - **Backend:** o endpoint `POST /api/v1/identity/useraccounts` não deve ser usado pelo portal sem autorização administrativa no servidor (ver a referência de produto, seção 2.1).
 - **Design system:** mudanças em `design-system/` geram um ticket de acompanhamento no front-end. Não há sincronização automática.
 - **Login definitivo:** tela de login final e o aviso discreto de sessão expirada com retorno à URL de destino (ADR 0007), em outro ticket. Hoje, se a renovação falha, o usuário só volta ao `/login`.
-- **Backend para o Início:** o Início conta e ordena sobre uma página de 50 pacientes e o tile de rascunhos é um stub. Dependem de LUC-57 (filtros e ordenação da listagem) e LUC-58 (resumo agregado).
+- **Backend para o Início:** o resumo agregado (LUC-58) alimenta as métricas e os rascunhos. A lista "Precisam de atenção" e "Pacientes recentes" ainda usam uma página de 50 pacientes e dependem do LUC-57 (filtros e ordenação da listagem); por isso a lista de falhas pode divergir do contador `failedAccess` com mais de 50 pacientes.
 - **Erros da API:** o OpenAPI não documenta as respostas de erro do backend; o `ApiError` segue o corpo real (ver [0002](adr/0002-estado-do-servidor-e-cliente-http.md)).

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deliveryStatus, hasAccessProblem, mostRecent } from ".";
+import { deliveryStatus, hasAccessFailure, mostRecent } from ".";
 
 describe("pacientes", () => {
   it("mapeia o estado de envio do e-mail sem expor o enum", () => {
@@ -9,10 +9,10 @@ describe("pacientes", () => {
     expect(deliveryStatus({})).toBeUndefined();
   });
 
-  it("considera problema só envio pendente ou com falha", () => {
-    expect(hasAccessProblem({ emailDeliveryStatus: "PENDING" })).toBe(true);
-    expect(hasAccessProblem({ emailDeliveryStatus: "FAILED" })).toBe(true);
-    expect(hasAccessProblem({ emailDeliveryStatus: "SENT" })).toBe(false);
+  it("considera problema só envio com falha", () => {
+    expect(hasAccessFailure({ emailDeliveryStatus: "PENDING" })).toBe(false);
+    expect(hasAccessFailure({ emailDeliveryStatus: "FAILED" })).toBe(true);
+    expect(hasAccessFailure({ emailDeliveryStatus: "SENT" })).toBe(false);
   });
 
   it("ordena do mais novo ao mais antigo e limita", () => {

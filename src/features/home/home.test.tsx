@@ -22,11 +22,48 @@ function patient(n: number, delivery = "SENT"): Patient {
   };
 }
 
-function mockApi(content: Patient[], totalPages = 1) {
+type Summary = components["schemas"]["NutritionistSummaryOutput"];
+
+function summary(
+  overrides: Partial<NonNullable<Summary["counts"]>> = {},
+  drafts: Summary["drafts"] = [],
+) {
+  return {
+    counts: {
+      activePatients: 3,
+      pendingAccess: 0,
+      failedAccess: 0,
+      openDrafts: drafts.length,
+      ...overrides,
+    },
+    drafts,
+  } satisfies Summary;
+}
+
+function draft(n: number): NonNullable<Summary["drafts"]>[number] {
+  return {
+    patientId: `p${n}`,
+    patientFullName: `Paciente ${n}`,
+    prescriptionId: `rx${n}`,
+    versionId: `v${n}`,
+    title: `Plano ${n}`,
+    versionNumber: n,
+    updatedAt: `2026-10-0${n}T10:00:00Z`,
+  };
+}
+
+function mockApi(content: Patient[], data: Summary = summary({ activePatients: content.length })) {
   server.use(
     http.get("*/api/v1/me", () => HttpResponse.json({ fullName: "Marina Souza Lima" })),
+    http.get("*/api/v1/nutritionists/me/summary", () => HttpResponse.json(data)),
     http.get("*/api/v1/nutritionists/me/patients", () =>
-      HttpResponse.json({ content, page: 0, size: 50, totalElements: content.length, totalPages }),
+      HttpResponse.json({
+        content,
+        page: 0,
+        size: 50,
+        totalElements: content.length,
+        totalPages: 1,
+      }),
     ),
   );
 }
@@ -50,49 +87,87 @@ function renderHome() {
 }
 
 describe("Início", () => {
-  it("mostra saudação, contagens e pacientes recentes do mais novo para o mais antigo", async () => {
-    mockApi([patient(1), patient(3), patient(2, "FAILED")]);
+  it("mostra saudação, métricas do resumo e pacientes recentes do mais novo para o mais antigo", async () => {
+    mockApi(
+      [patient(1), patient(3), patient(2)],
+      summary({ activePatients: 3, pendingAccess: 2, failedAccess: 1, openDrafts: 4 }),
+    );
     renderHome();
 
     expect(await screen.findByRole("heading", { name: "Olá, Marina" })).toBeInTheDocument();
     expect(screen.getByText("Pacientes ativos").nextSibling).toHaveTextContent("3");
-    expect(screen.getByText("Acessos com problema").nextSibling).toHaveTextContent("1");
+    expect(screen.getByText("Aguardando cadastro").nextSibling).toHaveTextContent("2");
+    expect(screen.getByText("Acessos com falha").nextSibling).toHaveTextContent("1");
+    expect(screen.getByText("Rascunhos em aberto").nextSibling).toHaveTextContent("4");
 
-    const recent = screen.getByRole("region", { name: "Pacientes recentes" });
+    const recent = await screen.findByRole("region", { name: "Pacientes recentes" });
     const names = within(recent)
       .getAllByRole("link", { name: /Paciente \d/ })
       .map((link) => link.textContent);
     expect(names).toEqual(["Paciente 3", "Paciente 2", "Paciente 1"]);
   });
 
-  it("lista só acessos pendentes ou com falha em 'Precisam de atenção'", async () => {
-    mockApi([patient(1), patient(2, "FAILED"), patient(3, "PENDING")]);
+  it("lista rascunhos na ordem recebida e abre a prescrição do paciente", async () => {
+    mockApi([patient(1)], summary({ activePatients: 1 }, [draft(2), draft(1)]));
+    const router = renderHome();
+
+    const list = await screen.findByRole("region", { name: "Rascunhos para continuar" });
+    const links = within(list).getAllByRole("link");
+    expect(links.map((l) => l.textContent)).toEqual([
+      expect.stringContaining("Paciente 2"),
+      expect.stringContaining("Paciente 1"),
+    ]);
+    expect(within(list).getAllByText("Rascunho")).toHaveLength(2);
+    expect(within(list).queryByText(/Mostrando/)).not.toBeInTheDocument();
+
+    await userEvent.setup().click(links[0]);
+    expect(router.state.location.pathname).toBe("/pacientes/p2/prescricao");
+  });
+
+  it("avisa quando há mais rascunhos em aberto do que os listados", async () => {
+    mockApi([patient(1)], {
+      ...summary({ activePatients: 1 }, [draft(1)]),
+      counts: { activePatients: 1, openDrafts: 7 },
+    });
+    renderHome();
+
+    expect(await screen.findByText("Mostrando 1 de 7 rascunhos em aberto.")).toBeInTheDocument();
+  });
+
+  it("não mostra 'Rascunhos para continuar' sem rascunhos", async () => {
+    mockApi([patient(1)]);
+    renderHome();
+
+    await screen.findByRole("region", { name: "Pacientes recentes" });
+    expect(
+      screen.queryByRole("region", { name: "Rascunhos para continuar" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("lista só acessos com falha em 'Precisam de atenção'", async () => {
+    mockApi(
+      [patient(1), patient(2, "FAILED"), patient(3, "PENDING")],
+      summary({ failedAccess: 1, pendingAccess: 1 }),
+    );
     renderHome();
 
     const attention = await screen.findByRole("region", { name: "Precisam de atenção" });
     expect(within(attention).getByText("Paciente 2")).toBeInTheDocument();
-    expect(within(attention).getByText("Paciente 3")).toBeInTheDocument();
+    expect(within(attention).queryByText("Paciente 3")).not.toBeInTheDocument();
     expect(within(attention).queryByText("Paciente 1")).not.toBeInTheDocument();
   });
 
-  it("não mostra 'Precisam de atenção' quando todos os acessos foram enviados", async () => {
-    mockApi([patient(1)]);
+  it("não mostra 'Precisam de atenção' quando nenhum acesso falhou", async () => {
+    mockApi([patient(1), patient(2, "PENDING")]);
     renderHome();
 
     await screen.findByRole("region", { name: "Pacientes recentes" });
     expect(screen.queryByRole("region", { name: "Precisam de atenção" })).not.toBeInTheDocument();
   });
 
-  it("marca a contagem de acessos com problema como parcial quando há mais páginas", async () => {
-    mockApi([patient(1, "FAILED")], 2);
-    renderHome();
-
-    expect(await screen.findByText("1+")).toBeInTheDocument();
-  });
-
   it("reenvia o acesso depois de confirmar", async () => {
     let resentTo: string | undefined;
-    mockApi([patient(2, "FAILED")]);
+    mockApi([patient(2, "FAILED")], summary({ activePatients: 1, failedAccess: 1 }));
     server.use(
       http.post("*/api/v1/nutritionists/me/patients/:patientId/access-email", ({ params }) => {
         resentTo = String(params.patientId);
@@ -114,7 +189,7 @@ describe("Início", () => {
   });
 
   it("mostra o estado vazio com a ação de adicionar paciente", async () => {
-    mockApi([]);
+    mockApi([], summary({ activePatients: 0 }));
     const router = renderHome();
 
     expect(await screen.findByText("Nenhum paciente ainda")).toBeInTheDocument();
@@ -122,18 +197,10 @@ describe("Início", () => {
     expect(router.state.location.pathname).toBe("/pacientes/novo");
   });
 
-  it("leva o tile de rascunhos para Pacientes com o filtro", async () => {
-    mockApi([patient(1)]);
-    const router = renderHome();
-
-    await userEvent.setup().click(await screen.findByRole("link", { name: /Rascunhos em aberto/ }));
-    expect(router.state.location.pathname).toBe("/pacientes");
-    expect(router.state.location.search).toBe("?filtro=rascunhos");
-  });
-
-  it("oferece nova tentativa quando a listagem falha", async () => {
+  it("oferece nova tentativa quando o resumo falha", async () => {
     server.use(
       http.get("*/api/v1/me", () => HttpResponse.json({ fullName: "Marina" })),
+      http.get("*/api/v1/nutritionists/me/summary", () => HttpResponse.error()),
       http.get("*/api/v1/nutritionists/me/patients", () => HttpResponse.error()),
     );
     renderHome();
