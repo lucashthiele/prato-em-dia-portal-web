@@ -1,0 +1,38 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.row + .row {
+  border-top: var(--border-hairline) solid var(--outline-variant);
+}
+
+.who {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  color: var(--ink);
+  font: var(--text-subtitle);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name:hover {
+  text-decoration: underline;
+}
+
+.email {
+  overflow: hidden;
+  color: var(--ink-muted);
+  font: var(--text-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

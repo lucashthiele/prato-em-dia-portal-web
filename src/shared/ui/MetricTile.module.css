@@ -1,0 +1,28 @@
+.metric {
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: var(--border-card) solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+}
+
+.label {
+  font: var(--text-body);
+  color: var(--ink-muted);
+}
+
+.value {
+  margin-top: var(--space-2);
+  font: var(--text-metric);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.unit {
+  font: var(--text-subtitle);
+}
+
+.hint {
+  margin-top: var(--space-1);
+  font: var(--text-caption);
+  color: var(--ink-muted);
+}
