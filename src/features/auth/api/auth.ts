@@ -8,29 +8,25 @@ interface Credentials {
 }
 
 export function useLogin() {
-  const { signIn } = useSession();
+  const { refresh } = useSession();
   return useMutation({
+    // Os cookies da sessão vêm na resposta; depois do login, `GET /me` diz se há termos pendentes.
     mutationFn: async (credentials: Credentials) => {
-      const { data } = await client.POST("/api/v1/auth/login", { body: credentials });
-      if (!data?.accessToken || !data.refreshToken) {
-        throw new Error("Resposta de login sem tokens.");
-      }
-      return { accessToken: data.accessToken, refreshToken: data.refreshToken };
+      await client.POST("/api/v1/auth/login", { body: credentials });
     },
-    onSuccess: signIn,
+    onSuccess: () => refresh(),
   });
 }
 
 export function useLogout() {
-  const { session, signOut } = useSession();
+  const { signOut } = useSession();
   return useMutation({
     mutationFn: async () => {
       // Revoga no servidor se der; a sessão local é encerrada de qualquer forma.
-      if (!session) return;
       try {
-        await client.POST("/api/v1/auth/logout", { body: { refreshToken: session.refreshToken } });
+        await client.POST("/api/v1/auth/logout");
       } catch {
-        // Falha de rede ou token já inválido: não prende o usuário na sessão.
+        // Falha de rede ou sessão já inválida: não prende o usuário na sessão.
       }
     },
     onSettled: signOut,

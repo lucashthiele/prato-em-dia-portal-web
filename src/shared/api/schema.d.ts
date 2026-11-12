@@ -246,10 +246,34 @@ export interface paths {
         get: operations["list"];
         put?: never;
         /**
-         * Gerar plano semanal
-         * @description Gera manualmente o plano para os sete dias seguintes.
+         * Gerar ou regenerar plano semanal
+         * @description Regenera manualmente o plano de hoje até o próximo dia automático da preferência (segunda-feira se não houver preferência), ou só de hoje quando hoje é o dia automático. As refeições ativas desses dias, em qualquer plano, viram histórico e saem das leituras. Perde com 409 WEEKLY_PLAN_GENERATION_CONFLICT quando outra geração ocupa os mesmos dias primeiro.
          */
         post: operations["generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/patients/me/weekly-plans/{planId}/shopping-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consultar a lista de compras ativa do plano
+         * @description Devolve 404 (SHOPPING_LIST_NOT_FOUND) quando não há lista ativa; o cliente então chama o POST.
+         */
+        get: operations["get_2"];
+        put?: never;
+        /**
+         * Criar a lista de compras do plano
+         * @description Soma os alimentos das refeições planejadas por alimento, porção e unidade. Idempotente: 201 ao criar, 200 se o plano já tem lista ativa. Qualquer mudança nas refeições planejadas desativa a lista.
+         */
+        post: operations["create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -337,7 +361,7 @@ export interface paths {
          * Adicionar paciente
          * @description Cria um vínculo com um paciente e envia suas instruções de acesso.
          */
-        post: operations["create"];
+        post: operations["create_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -361,7 +385,7 @@ export interface paths {
          * Criar prescrição
          * @description Cria uma prescrição alimentar inicial para o paciente informado.
          */
-        post: operations["create_1"];
+        post: operations["create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -388,20 +412,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/identity/useraccounts": {
+    "/api/v1/me/consents": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Consultar aceites
+         * @description Lista cada documento com a versão vigente e se a versão já foi aceita. Enquanto upToDate for falso, a API responde 403 CONSENT_REQUIRED nas demais rotas de paciente e nutricionista.
+         */
+        get: operations["status"];
         put?: never;
         /**
-         * Criar conta de usuário
-         * @description Cadastra uma nova conta com e-mail, senha, papel e dados básicos.
+         * Aceitar documento
+         * @description Registra o aceite da versão vigente de um documento. Repetir o aceite é inócuo; uma versão que não é a vigente retorna 409 CONSENT_VERSION_MISMATCH. Devolve o estado atualizado.
          */
-        post: operations["create_2"];
+        post: operations["accept"];
         delete?: never;
         options?: never;
         head?: never;
@@ -466,8 +494,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Renovar token de acesso
-         * @description Emite um novo par de tokens a partir de um refresh token válido.
+         * Renovar sessão
+         * @description Lê o cookie refresh_token (enviado somente para esta rota) e emite novos cookies de sessão. O refresh token é de uso único.
          */
         post: operations["refresh"];
         delete?: never;
@@ -487,7 +515,7 @@ export interface paths {
         put?: never;
         /**
          * Encerrar sessão
-         * @description Revoga o refresh token informado para encerrar a sessão atual.
+         * @description Revoga o refresh token do cookie e limpa os cookies de sessão.
          */
         post: operations["logout"];
         delete?: never;
@@ -507,9 +535,49 @@ export interface paths {
         put?: never;
         /**
          * Autenticar usuário
-         * @description Valida e-mail e senha e retorna os tokens de acesso e renovação.
+         * @description Valida e-mail e senha e inicia a sessão (após tentativas falhas demais por e-mail ou IP, responde 429 LOGIN_RATE_LIMITED com Retry-After): o access token e o refresh token são entregues em cookies HttpOnly, nunca no corpo.
          */
         post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/nutritionists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cadastrar nutricionista
+         * @description Cria a conta do nutricionista. A senha temporária é gerada pelo servidor e enviada por e-mail (pela outbox, em até um minuto); ela nunca é devolvida na resposta e a troca é obrigatória no primeiro acesso.
+         */
+        post: operations["createNutritionist"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/nutritionists/{id}/access-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reenviar acesso ao nutricionista
+         * @description Agenda um novo e-mail de acesso com uma nova senha temporária, que substitui as anteriores. Só vale para nutricionista ativo que ainda não trocou a senha inicial.
+         */
+        post: operations["resendAccess"];
         delete?: never;
         options?: never;
         head?: never;
@@ -527,7 +595,7 @@ export interface paths {
          * Consultar plano semanal
          * @description Retorna o plano semanal quando ele pertence ao paciente autenticado.
          */
-        get: operations["get_2"];
+        get: operations["get_3"];
         put?: never;
         post?: never;
         /**
@@ -559,9 +627,29 @@ export interface paths {
         head?: never;
         /**
          * Alterar senha
-         * @description Substitui a senha atual e emite um novo par de tokens de autenticação.
+         * @description Substitui a senha atual, revoga as sessões anteriores e renova os cookies de sessão.
          */
         patch: operations["change"];
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Alterar status da conta
+         * @description Ativa ou desativa uma conta. Desativar revoga os refresh tokens (o access token em curso vale até expirar). O administrador não pode alterar a própria conta.
+         */
+        patch: operations["changeStatus"];
         trace?: never;
     };
     "/api/v1/prescriptions/{prescriptionId}": {
@@ -575,7 +663,7 @@ export interface paths {
          * Consultar prescrição
          * @description Retorna uma prescrição acessível ao usuário autenticado.
          */
-        get: operations["get_3"];
+        get: operations["get_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -595,7 +683,7 @@ export interface paths {
          * Contexto da refeição planejada
          * @description Retorna itens planejados, modo e substituições autorizadas para o registro alimentar.
          */
-        get: operations["get_4"];
+        get: operations["get_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -615,7 +703,7 @@ export interface paths {
          * Consultar vínculo atual
          * @description Retorna o vínculo ativo do paciente com seu nutricionista.
          */
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         /**
@@ -668,6 +756,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/patients/me/daily-meal-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Estado e permissão das categorias do dia
+         * @description Devolve sempre as quatro categorias, com estado derivado (NOT_LOGGED, PARTIAL, LOGGED), permissão de registro e itens planejados cobertos e não cobertos.
+         */
+        get: operations["dailyMealCategories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/patients/me/calendar-periods": {
         parameters: {
             query?: never;
@@ -699,7 +807,7 @@ export interface paths {
          * Resumo do nutricionista
          * @description Retorna contagens (pacientes ativos, acessos pendentes e com falha, rascunhos em aberto) e os rascunhos de prescrição mais recentes, considerando somente pacientes com vínculo ativo.
          */
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -719,7 +827,7 @@ export interface paths {
          * Consultar paciente
          * @description Retorna os detalhes do vínculo com o paciente informado.
          */
-        get: operations["get_7"];
+        get: operations["get_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -740,6 +848,186 @@ export interface paths {
          * @description Exige vínculo ativo entre nutricionista e paciente.
          */
         get: operations["getForNutritionist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nutritionists/me/patients/{patientId}/prescription-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resumo da prescrição do paciente
+         * @description Somente leitura. Devolve a versão vigente, o rascunho aberto e o histórico de versões, com nomes de alimento e macros (kcal, proteína, carboidrato e lipídeos) por item, refeição e versão. Os totais são de um dia da prescrição e as substituições não entram neles. Sem prescrição, devolve prescriptionId nulo e history vazio.
+         */
+        get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nutritionists/me/patients/{patientId}/meal-executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar execuções do paciente por período
+         * @description Execuções ativas entre from e to (inclusive, no máximo 92 dias). Somente leitura.
+         */
+        get: operations["listExecutions_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nutritionists/me/patients/{patientId}/meal-executions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consultar execução do paciente
+         * @description Retorna uma execução do paciente com itens e totais congelados. Somente leitura.
+         */
+        get: operations["getExecution_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nutritionists/me/patients/{patientId}/daily-nutrition-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resumo nutricional diário do paciente
+         * @description Mesma resposta de /patients/me/daily-nutrition-summary, para o paciente vinculado.
+         */
+        get: operations["dailySummary_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nutritionists/me/patients/{patientId}/daily-meal-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Estado e permissão das categorias do paciente no dia
+         * @description Mesma resposta de /patients/me/daily-meal-categories, para o paciente vinculado.
+         */
+        get: operations["dailyMealCategories_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nutritionists/me/patients/{patientId}/calendar-periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Períodos consultáveis do calendário do paciente
+         * @description Mesma resposta de /patients/me/calendar-periods, para o paciente vinculado.
+         */
+        get: operations["calendar_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar usuários
+         * @description Página de contas, da mais recente para a mais antiga. Todos os filtros são opcionais e combinam entre si; `totalElements` reflete o filtro aplicado. O estado do e-mail de acesso vem da outbox (nutricionista) ou do vínculo (paciente).
+         */
+        get: operations["listUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consultar usuário
+         * @description Detalhes de uma conta, com o estado do e-mail de acesso.
+         */
+        get: operations["getUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar eventos de auditoria
+         * @description Página dos eventos administrativos (criação de nutricionista, reenvio de acesso e mudança de status), do mais recente para o mais antigo. Todos os filtros são opcionais e combinam entre si.
+         */
+        get: operations["list_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1072,8 +1360,6 @@ export interface components {
             prescribedMealId?: string;
             /** Format: date */
             date?: string;
-            /** Format: time-local */
-            time?: string;
             /** @enum {string} */
             mealType?: "BREAKFAST" | "LUNCH" | "SNACK" | "DINNER";
             name?: string;
@@ -1108,6 +1394,15 @@ export interface components {
             version?: number;
             meals?: components["schemas"]["PlannedMealOutput"][];
         };
+        ShoppingListOutput: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            weeklyPlanId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            items?: components["schemas"]["ItemOutput"][];
+        };
         RestoreRequest: {
             /** Format: uuid */
             restoreToken?: string;
@@ -1139,20 +1434,20 @@ export interface components {
             notes?: string;
             meals: components["schemas"]["MealRequest"][];
         };
-        CreateUserAccountRequest: {
-            /** Format: email */
-            email: string;
-            password: string;
-            role: string;
-            fullName?: string;
-            fullNameValidForRole?: boolean;
+        AcceptConsentRequest: {
+            documentType: string;
+            version: string;
         };
-        CreateUserAccountResponse: {
-            /** Format: uuid */
-            userId?: string;
-            email?: string;
-            role?: string;
-            status?: string;
+        ConsentStatusResponse: {
+            upToDate?: boolean;
+            documents?: components["schemas"]["Document"][];
+        };
+        Document: {
+            documentType?: string;
+            currentVersion?: string;
+            accepted?: boolean;
+            /** Format: date-time */
+            acceptedAt?: string;
         };
         CreateFoodPortionRequest: {
             label: string;
@@ -1195,13 +1490,7 @@ export interface components {
             status?: "VALUE" | "TRACE" | "NOT_AVAILABLE" | "NOT_APPLICABLE" | "NOT_ANALYZED";
             rawValue?: string;
         };
-        RefreshTokenRequest: {
-            refreshToken: string;
-        };
         AuthenticationResponse: {
-            accessToken?: string;
-            refreshToken?: string;
-            tokenType?: string;
             /** Format: int64 */
             expiresIn?: number;
             passwordChangeRequired?: boolean;
@@ -1210,6 +1499,20 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        CreateNutritionistRequest: {
+            /** Format: email */
+            email: string;
+            fullName: string;
+            registrationNumber?: string;
+        };
+        CreateNutritionistResponse: {
+            /** Format: uuid */
+            id?: string;
+            email?: string;
+            fullName?: string;
+            registrationNumber?: string;
+            accessEmailStatus?: string;
         };
         PlannedItemRequest: {
             /** Format: uuid */
@@ -1228,8 +1531,6 @@ export interface components {
             id?: string;
             /** Format: date */
             date: string;
-            /** Format: time-local */
-            time?: string;
             /** @enum {string} */
             mealType: "BREAKFAST" | "LUNCH" | "SNACK" | "DINNER";
             name: string;
@@ -1245,6 +1546,9 @@ export interface components {
         ChangePasswordRequest: {
             currentPassword: string;
             newPassword: string;
+        };
+        ChangeUserStatusRequest: {
+            status: string;
         };
         FoodLog: {
             /** Format: uuid */
@@ -1269,6 +1573,27 @@ export interface components {
             realized?: {
                 [key: string]: components["schemas"]["NutrientTotal"];
             };
+        };
+        DailyMealCategories: {
+            /** Format: date */
+            date?: string;
+            categories?: components["schemas"]["MealCategory"][];
+        };
+        MealCategory: {
+            /** @enum {string} */
+            mealType?: "BREAKFAST" | "LUNCH" | "SNACK" | "DINNER";
+            /** @enum {string} */
+            state?: "NOT_LOGGED" | "PARTIAL" | "LOGGED";
+            canRegister?: boolean;
+            blockedReason?: string;
+            /** Format: uuid */
+            plannedMealId?: string;
+            /** Format: int32 */
+            coveredItemCount?: number;
+            /** Format: int32 */
+            uncoveredItemCount?: number;
+            coveredPlannedItemIds?: string[];
+            uncoveredPlannedItemIds?: string[];
         };
         Calendar: {
             plans?: components["schemas"]["PlanPeriod"][];
@@ -1334,6 +1659,104 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
         };
+        HistoryEntry: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: int32 */
+            number?: number;
+            /** @enum {string} */
+            status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+            title?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            publishedAt?: string;
+            /** Format: date-time */
+            archivedAt?: string;
+        };
+        ItemSummary: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            foodId?: string;
+            foodName?: string;
+            quantity?: number;
+            unit?: string;
+            portionLabel?: string;
+            notes?: string;
+            nutrients?: components["schemas"]["Macros"];
+            substitutions?: components["schemas"]["SubstitutionSummary"][];
+        };
+        /** @description Macros em gramas (kcal em energyKcal), arredondados em duas casas. Um macro nulo não pôde ser calculado; complete=false indica que o valor não considera todos os itens. */
+        Macros: {
+            energyKcal?: number;
+            protein?: number;
+            carbohydrate?: number;
+            lipids?: number;
+            complete?: boolean;
+        };
+        MealSummary: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            /** @enum {string} */
+            mealType?: "BREAKFAST" | "LUNCH" | "SNACK" | "DINNER";
+            /** Format: int32 */
+            order?: number;
+            /** Format: time-local */
+            suggestedTime?: string;
+            notes?: string;
+            totals?: components["schemas"]["Macros"];
+            items?: components["schemas"]["ItemSummary"][];
+        };
+        PrescriptionSummary: {
+            /**
+             * Format: uuid
+             * @description Nulo quando o paciente não tem prescrição
+             */
+            prescriptionId?: string;
+            /** @enum {string} */
+            planningMode?: "FREE" | "SUBSTITUTIONS_ONLY" | "RESTRICTED";
+            /** @description Versão publicada vigente, se houver */
+            current?: components["schemas"]["VersionSummary"];
+            /** @description Rascunho aberto, se houver */
+            draft?: components["schemas"]["VersionSummary"];
+            /** @description Metadados de todas as versões, da mais nova para a mais antiga */
+            history?: components["schemas"]["HistoryEntry"][];
+        };
+        SubstitutionSummary: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            foodId?: string;
+            foodName?: string;
+            quantity?: number;
+            unit?: string;
+            portionLabel?: string;
+            notes?: string;
+        };
+        TargetSummary: {
+            nutrientCode?: string;
+            amount?: number;
+            unit?: string;
+        };
+        VersionSummary: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: int32 */
+            number?: number;
+            /** @enum {string} */
+            status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+            title?: string;
+            notes?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            publishedAt?: string;
+            totals?: components["schemas"]["Macros"];
+            targets?: components["schemas"]["TargetSummary"][];
+            meals?: components["schemas"]["MealSummary"][];
+        };
         PageResultFoodOutput: {
             content?: components["schemas"]["FoodOutput"][];
             /** Format: int32 */
@@ -1372,6 +1795,59 @@ export interface components {
             normalizedName?: string;
             portions?: components["schemas"]["FoodPortionOutput"][];
         };
+        AccessEmailResponse: {
+            status?: string;
+            /** Format: int32 */
+            attempts?: number;
+            lastError?: string;
+        };
+        AdminUserResponse: {
+            /** Format: uuid */
+            id?: string;
+            email?: string;
+            role?: string;
+            status?: string;
+            passwordChangeRequired?: boolean;
+            fullName?: string;
+            registrationNumber?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            accessEmail?: components["schemas"]["AccessEmailResponse"];
+        };
+        PageResultAdminUserResponse: {
+            content?: components["schemas"]["AdminUserResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
+        AuditEventResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** Format: uuid */
+            actorAccountId?: string;
+            action?: string;
+            /** Format: uuid */
+            targetAccountId?: string;
+            details?: string;
+        };
+        PageResultAuditEventResponse: {
+            content?: components["schemas"]["AuditEventResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
         Deleted: {
             /** Format: uuid */
             id?: string;
@@ -1381,6 +1857,18 @@ export interface components {
             restoreToken?: string;
             /** Format: date-time */
             restoreExpiresAt?: string;
+        };
+        ApiErrorResponse: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            errors?: components["schemas"]["ApiFieldError"][];
+        };
+        ApiFieldError: {
+            field?: string;
+            code?: string;
+            message?: string;
         };
     };
     responses: never;
@@ -1415,6 +1903,24 @@ export interface operations {
                     "*/*": components["schemas"]["PrescriptionOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     version: {
@@ -1435,6 +1941,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["VersionOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1463,6 +1987,24 @@ export interface operations {
                     "*/*": components["schemas"]["VersionOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     preference: {
@@ -1481,6 +2023,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WeeklyPlanningPreferenceOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1507,6 +2067,24 @@ export interface operations {
                     "*/*": components["schemas"]["WeeklyPlanningPreferenceOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     getExecution: {
@@ -1527,6 +2105,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Execution"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1558,6 +2154,24 @@ export interface operations {
                     "*/*": components["schemas"]["Execution"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     deleteExecution: {
@@ -1583,6 +2197,24 @@ export interface operations {
                     "*/*": components["schemas"]["Deleted"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     get: {
@@ -1601,6 +2233,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CurrentProfileResponse"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1627,6 +2277,24 @@ export interface operations {
                     "*/*": components["schemas"]["CurrentProfileResponse"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     get_1: {
@@ -1647,6 +2315,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FoodDetailsOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1675,6 +2361,24 @@ export interface operations {
                     "*/*": components["schemas"]["FoodOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     confirm: {
@@ -1695,6 +2399,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WeeklyPlanOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1719,6 +2441,24 @@ export interface operations {
                     "*/*": components["schemas"]["VersionOutput"][];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     createVersion: {
@@ -1739,6 +2479,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["VersionOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1763,6 +2521,24 @@ export interface operations {
                     "*/*": components["schemas"]["VersionOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     archive: {
@@ -1785,6 +2561,24 @@ export interface operations {
                     "*/*": components["schemas"]["VersionOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     list: {
@@ -1803,6 +2597,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WeeklyPlanOutput"][];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1825,6 +2637,104 @@ export interface operations {
                     "*/*": components["schemas"]["WeeklyPlanOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ShoppingListOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ShoppingListOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     listExecutions: {
@@ -1845,6 +2755,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Execution"][];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1873,6 +2801,24 @@ export interface operations {
                     "*/*": components["schemas"]["Execution"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     restoreExecution: {
@@ -1897,6 +2843,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Execution"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1926,6 +2890,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Execution"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1959,9 +2941,27 @@ export interface operations {
                     "*/*": components["schemas"]["PageResultRelationshipOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
-    create: {
+    create_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1981,6 +2981,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["RelationshipOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -2005,9 +3023,27 @@ export interface operations {
                     "*/*": components["schemas"]["PrescriptionOutput"][];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
-    create_1: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2031,6 +3067,24 @@ export interface operations {
                     "*/*": components["schemas"]["PrescriptionOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     reissueAccess: {
@@ -2051,9 +3105,65 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
-    create_2: {
+    status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsentStatusResponse"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    accept: {
         parameters: {
             query?: never;
             header?: never;
@@ -2062,7 +3172,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateUserAccountRequest"];
+                "application/json": components["schemas"]["AcceptConsentRequest"];
             };
         };
         responses: {
@@ -2072,7 +3182,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CreateUserAccountResponse"];
+                    "*/*": components["schemas"]["ConsentStatusResponse"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -2099,6 +3227,24 @@ export interface operations {
                     "*/*": components["schemas"]["PageResultFoodOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     create_3: {
@@ -2123,6 +3269,24 @@ export interface operations {
                     "*/*": components["schemas"]["FoodOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     portions: {
@@ -2143,6 +3307,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FoodPortionOutput"][];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -2171,6 +3353,24 @@ export interface operations {
                     "*/*": components["schemas"]["FoodPortionOutput"][];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     refresh: {
@@ -2178,13 +3378,11 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshTokenRequest"];
+            cookie?: {
+                refresh_token?: string;
             };
         };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -2195,6 +3393,24 @@ export interface operations {
                     "*/*": components["schemas"]["AuthenticationResponse"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     logout: {
@@ -2202,13 +3418,11 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshTokenRequest"];
+            cookie?: {
+                refresh_token?: string;
             };
         };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -2216,6 +3430,24 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
             };
         };
     };
@@ -2241,9 +3473,107 @@ export interface operations {
                     "*/*": components["schemas"]["AuthenticationResponse"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
-    get_2: {
+    createNutritionist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNutritionistRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CreateNutritionistResponse"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    resendAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2261,6 +3591,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WeeklyPlanOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -2304,6 +3652,24 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     update_3: {
@@ -2330,6 +3696,24 @@ export interface operations {
                     "*/*": components["schemas"]["WeeklyPlanOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     change: {
@@ -2354,9 +3738,69 @@ export interface operations {
                     "*/*": components["schemas"]["AuthenticationResponse"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
-    get_3: {
+    changeStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeUserStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -2376,9 +3820,27 @@ export interface operations {
                     "*/*": components["schemas"]["PrescriptionOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -2398,9 +3860,27 @@ export interface operations {
                     "*/*": components["schemas"]["FoodLog"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -2416,6 +3896,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["RelationshipOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -2436,6 +3934,24 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     current: {
@@ -2454,6 +3970,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["VersionOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -2478,6 +4012,64 @@ export interface operations {
                     "*/*": components["schemas"]["DailySummary"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    dailyMealCategories: {
+        parameters: {
+            query: {
+                date: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DailyMealCategories"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     calendar: {
@@ -2498,9 +4090,27 @@ export interface operations {
                     "*/*": components["schemas"]["Calendar"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: {
                 draftLimit?: number;
@@ -2520,9 +4130,27 @@ export interface operations {
                     "*/*": components["schemas"]["NutritionistSummaryOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
-    get_7: {
+    get_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -2540,6 +4168,24 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["RelationshipOutput"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -2592,6 +4238,410 @@ export interface operations {
                     "*/*": components["schemas"]["WeeklyPlanOutput"];
                 };
             };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PrescriptionSummary"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    listExecutions_1: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Execution"][];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    getExecution_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Execution"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    dailySummary_1: {
+        parameters: {
+            query: {
+                date: string;
+            };
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DailySummary"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    dailyMealCategories_1: {
+        parameters: {
+            query: {
+                date: string;
+            };
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DailyMealCategories"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    calendar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Calendar"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    listUsers: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                /** @description Filtra pelo papel. */
+                role?: "PATIENT" | "NUTRITIONIST" | "ADMIN";
+                /** @description Filtra pelo status da conta. */
+                status?: "ACTIVE" | "INACTIVE";
+                /** @description Busca por nome ou e-mail (sem distinção de maiúsculas). */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResultAdminUserResponse"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    getUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminUserResponse"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_4: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                /** @description Tipo da ação. */
+                action?: "NUTRITIONIST_CREATED" | "ACCESS_EMAIL_RESENT" | "USER_STATUS_CHANGED";
+                /** @description Conta do administrador que executou a ação. */
+                actorId?: string;
+                /** @description Conta afetada pela ação. */
+                targetId?: string;
+                /** @description Início do período (ISO-8601, inclusivo). */
+                from?: string;
+                /** @description Fim do período (ISO-8601, inclusivo). */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResultAuditEventResponse"];
+                };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     end_1: {
@@ -2611,6 +4661,24 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
             };
         };
     };

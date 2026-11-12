@@ -1,0 +1,51 @@
+.versions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.version {
+  padding: var(--space-3) 0;
+  border-top: var(--border-hairline) solid var(--outline-variant);
+}
+
+.version:first-child {
+  border-top: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.num {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-container);
+  font: var(--text-label);
+  color: var(--ink-muted);
+}
+
+.current .num {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-weight: 600;
+}
+
+.meta {
+  font: var(--text-caption);
+  color: var(--ink-muted);
+}

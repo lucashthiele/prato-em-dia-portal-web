@@ -1,6 +1,6 @@
 # 0007 — Sessão e armazenamento de tokens
 
-**Status:** aceita, **temporária** · **Data:** 2026-10-19
+**Status:** substituída por [0011](0011-sessao-por-cookies-httponly.md) · **Data:** 2026-10-19
 
 ## Contexto
 

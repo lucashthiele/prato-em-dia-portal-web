@@ -18,6 +18,9 @@ function bannerMessage(error: unknown): string {
     if (error.status === 401)
       return "E-mail ou senha incorretos. Confira os dados e tente novamente.";
     if (error.status === 400) return "Revise os campos destacados e tente de novo.";
+    if (error.status === 429) {
+      return "Muitas tentativas de entrada. Aguarde alguns minutos e tente de novo.";
+    }
   }
   return "Não foi possível entrar agora. Tente de novo em instantes.";
 }

@@ -1,7 +1,13 @@
 import { createBrowserRouter, Navigate } from "react-router";
-import { LoginPage, RequireSession, RedirectIfSession } from "../features/auth";
+import {
+  ConsentPage,
+  LoginPage,
+  RedirectIfSession,
+  RequireConsent,
+  RequireSession,
+} from "../features/auth";
 import { HomePage } from "../features/home";
-import { PatientsListPage } from "../features/patients";
+import { PatientPage, PatientsListPage } from "../features/patients";
 import { ComingSoon } from "./ComingSoon";
 import { Shell } from "./Shell";
 
@@ -11,6 +17,10 @@ export const routes = [
     children: [{ path: "/login", element: <LoginPage /> }],
   },
   {
+    element: <RequireConsent />,
+    children: [{ path: "/termos", element: <ConsentPage /> }],
+  },
+  {
     element: <RequireSession />,
     children: [
       {
@@ -18,8 +28,13 @@ export const routes = [
         children: [
           { path: "/", element: <HomePage /> },
           { path: "/pacientes", element: <PatientsListPage /> },
-          // Rotas reservadas até os tickets de detalhe do paciente e Perfil.
-          { path: "/pacientes/*", element: <ComingSoon title="Pacientes" /> },
+          // Rotas reservadas até os tickets de cadastro, editor de prescrição e Perfil.
+          { path: "/pacientes/novo", element: <ComingSoon title="Adicionar paciente" /> },
+          { path: "/pacientes/:patientId", element: <PatientPage /> },
+          {
+            path: "/pacientes/:patientId/prescricao/nova",
+            element: <ComingSoon title="Nova versão da prescrição" />,
+          },
           { path: "/perfil", element: <ComingSoon title="Perfil e conta" /> },
         ],
       },

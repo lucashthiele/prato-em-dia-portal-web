@@ -11,7 +11,7 @@ Todo plano de implementação precisa de uma estratégia de testes. O portal é 
 - **Vitest** como executor, com **React Testing Library** para componentes e fluxos. Consultas por papel e rótulo, o que também confere a acessibilidade.
 - **MSW** (Mock Service Worker) simula o backend na camada de rede. Os handlers usam os tipos gerados do OpenAPI (ver [0003](0003-tipos-da-api-gerados.md)), então uma mudança de contrato quebra o teste na compilação.
 - **Playwright (ponta a ponta) fica fora do setup inicial.** Entra num ticket próprio, com o primeiro fluxo real (cadastrar paciente, criar e publicar prescrição), quando houver um backend rodando no CI.
-- A primeira tela deve ter testes para: login com sucesso, senha errada, `401` e sessão restaurada do `localStorage`.
+- A primeira tela deve ter testes para: login com sucesso, senha errada, `401` e sessão restaurada dos cookies.
 
 ## Consequências
 
