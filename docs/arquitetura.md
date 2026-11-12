@@ -2,7 +2,7 @@
 
 Visão geral das decisões técnicas do portal do nutricionista. Cada decisão tem um ADR com contexto, consequências e alternativas descartadas. O comportamento de produto está em `../docs/Portal do Nutricionista — Referência de Produto MVP.md`, fora deste repositório.
 
-**Estado:** o setup técnico está feito (LUC-13): Yarn 4, Vite, lint, testes, CI, cliente tipado e login temporário. O LUC-56 entregou o shell (`SideNav`), o Início, o envio do token e a renovação em `401` no cliente. O LUC-60 entregou a lista de Pacientes (busca, filtros, ordenação e paginação no servidor, estado na URL). O LUC-63 entregou a tela de paciente (`/pacientes/:patientId`): cabeçalho, ações, prescrição vigente e histórico de versões; a aba Acompanhamento é um estado vazio até o backend expor a semana ao nutricionista. Perfil, cadastro de paciente, editor de prescrição e o login definitivo vêm em outros tickets; `/pacientes/novo`, `/pacientes/:patientId/prescricao/nova` e `/perfil` são rotas reservadas.
+**Estado:** o setup técnico está feito (LUC-13): Yarn 4, Vite, lint, testes, CI, cliente tipado e login temporário. O LUC-56 entregou o shell (`SideNav`), o Início, o envio do token e a renovação em `401` no cliente. O LUC-60 entregou a lista de Pacientes (busca, filtros, ordenação e paginação no servidor, estado na URL). A sessão passou a usar cookies `HttpOnly` (LUC-54, lado do portal; ADR 0011), com tela de aceite dos termos. O LUC-63 entregou a tela de paciente (`/pacientes/:patientId`): cabeçalho, ações, prescrição vigente e histórico de versões; a aba Acompanhamento é um estado vazio até o backend expor a semana ao nutricionista. Perfil, cadastro de paciente, editor de prescrição e o login definitivo vêm em outros tickets; `/pacientes/novo`, `/pacientes/:patientId/prescricao/nova` e `/perfil` são rotas reservadas.
 
 ## Stack
 
@@ -15,7 +15,7 @@ Visão geral das decisões técnicas do portal do nutricionista. Cada decisão t
 | Estilos | CSS Modules + `src/styles/tokens.css`; `design-system/` só como referência | [0004](adr/0004-estilos-e-design-system-como-referencia.md) |
 | Acessibilidade | Primitivos sem estilo do Radix UI | [0005](adr/0005-primitivos-acessiveis.md) |
 | Estrutura | Pastas por feature, fronteiras verificadas por lint | [0006](adr/0006-estrutura-e-fronteiras.md) |
-| Sessão | Tokens em `localStorage` (temporário, até LUC-54) | [0007](adr/0007-sessao-e-armazenamento-de-tokens.md) |
+| Sessão | Cookies `HttpOnly` emitidos pelo backend; o portal nunca vê os tokens | [0011](adr/0011-sessao-por-cookies-httponly.md) |
 | URL da API | `/api/v1` relativo, proxy no Vite e no proxy reverso | [0008](adr/0008-url-da-api-e-cors.md) |
 | Testes | Vitest + React Testing Library + MSW | [0009](adr/0009-testes.md) |
 | Ferramentas e CI | Yarn 4, ESLint, Stylelint, Prettier, GitHub Actions | [0010](adr/0010-ferramentas-e-ci.md) |
@@ -65,9 +65,10 @@ Os tipos vêm de `/v3/api-docs` e são versionados. Antes de planejar uma funcio
 
 - **Backend (LUC-64):** rota `prescription-summary` com nome do alimento e macros por item/refeição. Até lá, `features/prescriptions/api/foods.ts` busca o nome de cada alimento em `GET /foods/{id}` e a tela não mostra calorias nem macros por refeição (só as metas da versão).
 - **Backend:** não há endpoint do nutricionista para a semana registrada pelo paciente (planos e execuções); por isso a aba Acompanhamento está vazia.
-- **LUC-54:** mover a sessão para cookies `HttpOnly` (backend e portal). Bloqueia o release em produção.
+- **LUC-74:** troca de senha obrigatória no primeiro acesso (`passwordChangeRequired`); o portal ainda não trata.
+- **Termos:** o texto de `features/auth/lib/legal-texts.ts` é preliminar e precisa de revisão jurídica antes do lançamento.
 - **Backend:** o endpoint `POST /api/v1/identity/useraccounts` não deve ser usado pelo portal sem autorização administrativa no servidor (ver a referência de produto, seção 2.1).
 - **Design system:** mudanças em `design-system/` geram um ticket de acompanhamento no front-end. Não há sincronização automática.
-- **Login definitivo:** tela de login final e o aviso discreto de sessão expirada com retorno à URL de destino (ADR 0007), em outro ticket. Hoje, se a renovação falha, o usuário só volta ao `/login`.
+- **Login definitivo:** tela de login final e o aviso discreto de sessão expirada, em outro ticket. O retorno à URL de destino já existe; hoje, se a renovação falha, o usuário só volta ao `/login`.
 - **Design system:** a paginação (Anterior/Próxima) e os chips de filtro da lista de Pacientes foram criados em `features/patients` sem equivalente em `design-system/`; falta um ticket de acompanhamento para formalizá-los.
 - **Erros da API:** o OpenAPI não documenta as respostas de erro do backend; o `ApiError` segue o corpo real (ver [0002](adr/0002-estado-do-servidor-e-cliente-http.md)).

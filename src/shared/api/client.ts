@@ -6,17 +6,16 @@ import type { paths } from "./schema";
 // ela é explícita porque o fetch do Node (testes) não resolve URLs relativas.
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? window.location.origin;
 
-export interface SessionTokens {
-  accessToken: string;
-  refreshToken: string;
-}
+// A sessão vive em cookies HttpOnly (ADR 0011): o JavaScript nunca vê os tokens.
+const credentials = "include";
+const clientVersion = `web/${__APP_VERSION__}`;
 
-/** Como o cliente lê e atualiza a sessão. Quem guarda a sessão (features/auth) registra isto. */
+/** O que o cliente avisa a quem guarda o estado da sessão (features/auth registra isto). */
 export interface SessionAccessors {
-  getTokens: () => SessionTokens | null;
-  onRefreshed: (tokens: SessionTokens) => void;
   /** A renovação falhou: a sessão não vale mais. */
   onExpired: () => void;
+  /** O backend exige o aceite dos termos vigentes antes de qualquer outra rota. */
+  onConsentRequired: () => void;
 }
 
 let accessors: SessionAccessors | null = null;
@@ -28,31 +27,26 @@ export function configureSession(next: SessionAccessors | null): void {
 // O fetch global é resolvido a cada chamada (e não na criação), para o MSW interceptar nos testes.
 const rawFetch = (request: Request) => globalThis.fetch(request);
 
-// Rotas de autenticação não levam token nem disparam renovação.
+// Rotas de autenticação não disparam renovação.
 const isAuthRoute = (url: string) =>
   /\/api\/v1\/auth\/(login|refresh|logout)$/.test(new URL(url).pathname);
 
 // Uma renovação por vez: pedidos que falham juntos com 401 esperam a mesma resposta.
-let refreshing: Promise<SessionTokens | null> | null = null;
+let refreshing: Promise<boolean> | null = null;
 
-async function refreshTokens(failedAccessToken: string): Promise<SessionTokens | null> {
-  const current = accessors?.getTokens();
-  // Outro pedido já renovou enquanto este esperava: basta repetir com o token novo.
-  if (current && current.accessToken !== failedAccessToken) return current;
-  if (!current) return null;
-
+function refreshSession(): Promise<boolean> {
   refreshing ??= (async () => {
     try {
-      const { data } = await createClient<paths>({ baseUrl, fetch: rawFetch }).POST(
-        "/api/v1/auth/refresh",
-        { body: { refreshToken: current.refreshToken } },
+      const response = await rawFetch(
+        new Request(new URL("/api/v1/auth/refresh", baseUrl), {
+          method: "POST",
+          credentials,
+          headers: { "X-Client-Version": clientVersion },
+        }),
       );
-      if (!data?.accessToken || !data.refreshToken) return null;
-      const tokens = { accessToken: data.accessToken, refreshToken: data.refreshToken };
-      accessors?.onRefreshed(tokens);
-      return tokens;
+      return response.ok;
     } catch {
-      return null;
+      return false;
     } finally {
       refreshing = null;
     }
@@ -65,37 +59,27 @@ const retryable = new WeakMap<Request, Request>();
 
 const apiMiddleware: Middleware = {
   onRequest({ request }) {
-    if (isAuthRoute(request.url)) return request;
-    const tokens = accessors?.getTokens();
-    if (!tokens) return request;
-    const authorized = new Request(request, {
-      headers: new Headers({
-        ...Object.fromEntries(request.headers),
-        Authorization: `Bearer ${tokens.accessToken}`,
-      }),
-    });
-    retryable.set(authorized, authorized.clone());
-    return authorized;
+    request.headers.set("X-Client-Version", clientVersion);
+    if (!isAuthRoute(request.url)) retryable.set(request, request.clone());
+    return request;
   },
   async onResponse({ request, response }) {
+    if (response.ok) return;
     const original = retryable.get(request);
     if (response.status === 401 && original) {
-      const failedToken = request.headers.get("Authorization")?.replace("Bearer ", "") ?? "";
-      const tokens = await refreshTokens(failedToken);
-      if (!tokens) {
-        accessors?.onExpired();
-        throw await toApiError(response);
-      }
-      const headers = new Headers(original.headers);
-      headers.set("Authorization", `Bearer ${tokens.accessToken}`);
-      const retried = await rawFetch(new Request(original, { headers }));
-      if (!retried.ok) {
-        if (retried.status === 401) accessors?.onExpired();
-        throw await toApiError(retried);
-      }
-      return retried;
+      // O refresh token é de uso único: se outra aba renovou primeiro, a nossa renovação falha,
+      // mas os cookies já são novos. Por isso o pedido é repetido uma vez de qualquer forma.
+      await refreshSession();
+      const retried = await rawFetch(original);
+      if (retried.ok) return retried;
+      const error = await toApiError(retried);
+      if (retried.status === 401) accessors?.onExpired();
+      else if (error.code === "CONSENT_REQUIRED") accessors?.onConsentRequired();
+      throw error;
     }
-    if (!response.ok) throw await toApiError(response);
+    const error = await toApiError(response);
+    if (error.code === "CONSENT_REQUIRED") accessors?.onConsentRequired();
+    throw error;
   },
   onError({ error }) {
     // O openapi-fetch também passa por aqui o ApiError lançado em onResponse.
@@ -104,5 +88,5 @@ const apiMiddleware: Middleware = {
   },
 };
 
-export const client = createClient<paths>({ baseUrl, fetch: rawFetch });
+export const client = createClient<paths>({ baseUrl, fetch: rawFetch, credentials });
 client.use(apiMiddleware);

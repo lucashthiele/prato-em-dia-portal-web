@@ -1,5 +1,11 @@
 import { createBrowserRouter, Navigate } from "react-router";
-import { LoginPage, RequireSession, RedirectIfSession } from "../features/auth";
+import {
+  ConsentPage,
+  LoginPage,
+  RedirectIfSession,
+  RequireConsent,
+  RequireSession,
+} from "../features/auth";
 import { HomePage } from "../features/home";
 import { PatientPage, PatientsListPage } from "../features/patients";
 import { ComingSoon } from "./ComingSoon";
@@ -9,6 +15,10 @@ export const routes = [
   {
     element: <RedirectIfSession />,
     children: [{ path: "/login", element: <LoginPage /> }],
+  },
+  {
+    element: <RequireConsent />,
+    children: [{ path: "/termos", element: <ConsentPage /> }],
   },
   {
     element: <RequireSession />,
