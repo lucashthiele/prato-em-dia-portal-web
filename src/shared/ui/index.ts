@@ -1,9 +1,13 @@
+export { ActionMenu, type ActionMenuProps } from "./ActionMenu";
 export { Alert, type AlertProps } from "./Alert";
 export { Button, type ButtonProps } from "./Button";
 export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog";
 export { EmptyState, type EmptyStateProps } from "./EmptyState";
 export { Icon, type IconName, type IconProps } from "./Icon";
 export { MetricTile, type MetricTileProps } from "./MetricTile";
+export { PatientHeader, type PatientHeaderProps } from "./PatientHeader";
 export { SideNav, type SideNavProps } from "./SideNav";
 export { StatusChip, type Status, type StatusChipProps } from "./StatusChip";
+export { Tabs, type TabsProps } from "./Tabs";
 export { TextField, type TextFieldProps } from "./TextField";
+export { VersionHistory, type Version, type VersionHistoryProps } from "./VersionHistory";

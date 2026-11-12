@@ -2,7 +2,7 @@
 
 Visão geral das decisões técnicas do portal do nutricionista. Cada decisão tem um ADR com contexto, consequências e alternativas descartadas. O comportamento de produto está em `../docs/Portal do Nutricionista — Referência de Produto MVP.md`, fora deste repositório.
 
-**Estado:** o setup técnico está feito (LUC-13): Yarn 4, Vite, lint, testes, CI, cliente tipado e login temporário. O LUC-56 entregou o shell (`SideNav`), o Início, o envio do token e a renovação em `401` no cliente. O LUC-60 entregou a lista de Pacientes (busca, filtros, ordenação e paginação no servidor, estado na URL). Detalhe do paciente, Perfil e o login definitivo vêm em outros tickets; `/pacientes/*` (exceto a lista) e `/perfil` são rotas reservadas.
+**Estado:** o setup técnico está feito (LUC-13): Yarn 4, Vite, lint, testes, CI, cliente tipado e login temporário. O LUC-56 entregou o shell (`SideNav`), o Início, o envio do token e a renovação em `401` no cliente. O LUC-60 entregou a lista de Pacientes (busca, filtros, ordenação e paginação no servidor, estado na URL). O LUC-63 entregou a tela de paciente (`/pacientes/:patientId`): cabeçalho, ações, prescrição vigente e histórico de versões; a aba Acompanhamento é um estado vazio até o backend expor a semana ao nutricionista. Perfil, cadastro de paciente, editor de prescrição e o login definitivo vêm em outros tickets; `/pacientes/novo`, `/pacientes/:patientId/prescricao/nova` e `/perfil` são rotas reservadas.
 
 ## Stack
 
@@ -63,6 +63,8 @@ Os tipos vêm de `/v3/api-docs` e são versionados. Antes de planejar uma funcio
 
 ## Pendências conhecidas
 
+- **Backend (LUC-64):** rota `prescription-summary` com nome do alimento e macros por item/refeição. Até lá, `features/prescriptions/api/foods.ts` busca o nome de cada alimento em `GET /foods/{id}` e a tela não mostra calorias nem macros por refeição (só as metas da versão).
+- **Backend:** não há endpoint do nutricionista para a semana registrada pelo paciente (planos e execuções); por isso a aba Acompanhamento está vazia.
 - **LUC-54:** mover a sessão para cookies `HttpOnly` (backend e portal). Bloqueia o release em produção.
 - **Backend:** o endpoint `POST /api/v1/identity/useraccounts` não deve ser usado pelo portal sem autorização administrativa no servidor (ver a referência de produto, seção 2.1).
 - **Design system:** mudanças em `design-system/` geram um ticket de acompanhamento no front-end. Não há sincronização automática.
