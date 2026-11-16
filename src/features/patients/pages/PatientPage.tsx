@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { ApiError } from "../../../shared/api";
 import {
   ActionMenu,
@@ -10,9 +10,11 @@ import {
   PatientHeader,
   Tabs,
 } from "../../../shared/ui";
-import { PrescriptionPanel } from "../../prescriptions";
+import { PrescriptionPanel, useNewVersion } from "../../prescriptions";
+import { DayPage, WeekPanel } from "../../tracking";
 import { useEndRelationship, usePatient } from "../api/patient";
 import { useResendAccess } from "../api/patients";
+import { AccessEmailAlert } from "../components/AccessEmailAlert";
 import { deliveryStatus } from "../lib/patients";
 import styles from "./PatientPage.module.css";
 
@@ -23,22 +25,44 @@ const TABS = [
 
 type Dialog = "resend" | "end" | null;
 
+/** Por quanto tempo o portal consulta o estado do e-mail logo após o cadastro. */
+const ACCESS_EMAIL_POLL_WINDOW_MS = 30_000;
+
 export function PatientPage() {
-  const { patientId = "" } = useParams();
+  const { patientId = "", data: day } = useParams();
   // `key` zera o estado local ao trocar de paciente: nunca mostra dados do anterior.
-  return <PatientScreen key={patientId} patientId={patientId} />;
+  return <PatientScreen key={patientId} patientId={patientId} day={day} />;
 }
 
-function PatientScreen({ patientId }: { patientId: string }) {
+function PatientScreen({ patientId, day }: { patientId: string; day?: string }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const patient = usePatient(patientId);
+  const location = useLocation();
+  // O Alert do e-mail só aparece ao chegar do cadastro (`state` do navigate).
+  const fromCreate = (location.state as { accessEmailAlert?: boolean } | null)?.accessEmailAlert;
+  const [pollWindow, setPollWindow] = useState({ open: fromCreate === true, run: 0 });
+  const patient = usePatient(patientId, { poll: pollWindow.open });
   const resend = useResendAccess();
   const end = useEndRelationship();
+  const newVersion = useNewVersion(patientId);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [resent, setResent] = useState(false);
 
-  const tab = TABS.some((t) => t.id === params.get("aba")) ? params.get("aba")! : "prescricao";
+  useEffect(() => {
+    if (!pollWindow.open) return;
+    const timer = setTimeout(
+      () => setPollWindow((prev) => ({ ...prev, open: false })),
+      ACCESS_EMAIL_POLL_WINDOW_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [pollWindow.open, pollWindow.run]);
+
+  // O detalhe do dia (`/acompanhamento/:data`) é a aba Acompanhamento em outra rota.
+  const tab = day
+    ? "acompanhamento"
+    : TABS.some((t) => t.id === params.get("aba"))
+      ? params.get("aba")!
+      : "prescricao";
 
   if (patient.isPending) {
     return (
@@ -118,6 +142,16 @@ function PatientScreen({ patientId }: { patientId: string }) {
         actions={
           ended ? null : (
             <>
+              {newVersion.available ? (
+                <Button
+                  variant="outline"
+                  icon="plus"
+                  loading={newVersion.pending}
+                  onClick={newVersion.start}
+                >
+                  Nova versão
+                </Button>
+              ) : null}
               {canResend ? (
                 <Button
                   variant="outline"
@@ -131,12 +165,6 @@ function PatientScreen({ patientId }: { patientId: string }) {
                   Reenviar acesso
                 </Button>
               ) : null}
-              <Button
-                icon="plus"
-                onClick={() => navigate(`/pacientes/${patientId}/prescricao/nova`)}
-              >
-                Nova versão
-              </Button>
               <ActionMenu
                 label="Mais ações"
                 items={[
@@ -156,11 +184,41 @@ function PatientScreen({ patientId }: { patientId: string }) {
         }
       />
 
+      {fromCreate && !ended ? (
+        <AccessEmailAlert
+          status={data.emailDeliveryStatus}
+          email={data.patientEmail ?? ""}
+          timedOut={!pollWindow.open}
+          resending={resend.isPending && dialog === null}
+          onResend={() =>
+            resend.mutate(patientId, {
+              onSuccess: () => setPollWindow((prev) => ({ open: true, run: prev.run + 1 })),
+            })
+          }
+        />
+      ) : null}
+
       {resent ? (
         <Alert tone="success">Acesso reenviado para {name}.</Alert>
       ) : resend.isError ? (
         <Alert tone="danger" title="Não foi possível reenviar o acesso">
           Tente novamente em instantes.
+        </Alert>
+      ) : newVersion.error ? (
+        <Alert
+          tone="danger"
+          title="Não foi possível criar a nova versão"
+          action={
+            newVersion.error instanceof ApiError && newVersion.error.status === 409 ? (
+              <Button size="sm" variant="outline" onClick={newVersion.reload}>
+                Recarregar
+              </Button>
+            ) : undefined
+          }
+        >
+          {newVersion.error instanceof ApiError && newVersion.error.status === 409
+            ? "Esta prescrição mudou em outra aba. Recarregue antes de criar a nova versão."
+            : "Tente novamente em instantes."}
         </Alert>
       ) : end.isError ? (
         <Alert tone="danger" title="Não foi possível encerrar o vínculo">
@@ -172,7 +230,11 @@ function PatientScreen({ patientId }: { patientId: string }) {
         label="Paciente"
         items={TABS}
         value={tab}
-        onChange={(id) => setParams(id === "prescricao" ? {} : { aba: id }, { replace: true })}
+        onChange={(id) =>
+          day
+            ? navigate(`/pacientes/${patientId}${id === "prescricao" ? "" : `?aba=${id}`}`)
+            : setParams(id === "prescricao" ? {} : { aba: id }, { replace: true })
+        }
       />
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
@@ -184,10 +246,14 @@ function PatientScreen({ patientId }: { patientId: string }) {
           ) : (
             <PrescriptionPanel patientId={patientId} />
           )
-        ) : (
-          <EmptyState title="Acompanhamento da semana" icon="clock">
-            A semana registrada no app ainda não está disponível no portal.
+        ) : ended ? (
+          <EmptyState title="Vínculo encerrado" icon="history">
+            Você não acessa mais o acompanhamento deste paciente.
           </EmptyState>
+        ) : day ? (
+          <DayPage patientId={patientId} date={day} />
+        ) : (
+          <WeekPanel patientId={patientId} />
         )}
       </div>
 
@@ -204,7 +270,7 @@ function PatientScreen({ patientId }: { patientId: string }) {
 
       <ConfirmDialog
         open={dialog === "end"}
-        title="Encerrar vínculo?"
+        title={`Encerrar vínculo com ${name}?`}
         confirmLabel="Encerrar vínculo"
         tone="danger"
         loading={end.isPending}
@@ -212,8 +278,8 @@ function PatientScreen({ patientId }: { patientId: string }) {
         onCancel={() => setDialog(null)}
       >
         <p>
-          Você deixa de ver a prescrição e o acompanhamento de {name}. Essa ação não pode ser
-          desfeita.
+          Você deixa de ver a prescrição e o acompanhamento de {name}. A prescrição é arquivada e o
+          paciente deixa de receber novos planos. O histórico de registros é mantido.
         </p>
       </ConfirmDialog>
     </div>

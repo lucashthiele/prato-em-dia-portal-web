@@ -1,0 +1,12 @@
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.range {
+  margin: 0;
+  font: var(--text-title);
+  font-variant-numeric: tabular-nums;
+}

@@ -102,6 +102,14 @@ function mockApi({
     http.get("*/api/v1/foods/:id", ({ params }) =>
       HttpResponse.json({ id: params.id, name: params.id === "f1" ? "Ovo cozido" : "Queijo" }),
     ),
+    // A aba Acompanhamento pede a semana; aqui basta uma semana sem plano.
+    http.get("*/api/v1/nutritionists/me/patients/:id/daily-meal-categories", () =>
+      HttpResponse.json({ categories: [] }),
+    ),
+    http.get("*/api/v1/nutritionists/me/patients/:id/meal-executions", () => HttpResponse.json([])),
+    http.get("*/api/v1/nutritionists/me/patients/:id/calendar-periods", () =>
+      HttpResponse.json({}),
+    ),
     http.post("*/api/v1/nutritionists/me/patients/:id/access-email", () => {
       calls.push("resend");
       return new HttpResponse(null, { status: 202 });
@@ -119,7 +127,7 @@ function renderPage(url = `/pacientes/${PATIENT_ID}`) {
     [
       { path: "/pacientes", element: <p>Lista de pacientes</p> },
       { path: "/pacientes/:patientId", element: <PatientPage /> },
-      { path: "/pacientes/:patientId/prescricao/nova", element: <p>Nova versão em breve</p> },
+      { path: "/pacientes/:patientId/prescricao/:versionId", element: <p>Editor do rascunho</p> },
     ],
     { initialEntries: [url] },
   );
@@ -192,14 +200,14 @@ describe("Tela de paciente", () => {
     prescription.focus();
     await userEvent.keyboard("{ArrowRight}");
     expect(router.state.location.search).toBe("?aba=acompanhamento");
-    expect(screen.getByText("Acompanhamento da semana")).toBeVisible();
+    expect(await screen.findByText("Sem plano nesta semana")).toBeVisible();
     expect(within(tabs).getByRole("tab", { name: "Acompanhamento" })).toHaveFocus();
   });
 
   it("abre a aba pela URL", async () => {
     mockApi();
     renderPage(`/pacientes/${PATIENT_ID}?aba=acompanhamento`);
-    expect(await screen.findByText("Acompanhamento da semana")).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Semana anterior" })).toBeVisible();
   });
 
   it("só oferece reenviar acesso quando o envio está pendente ou falhou", async () => {
@@ -236,11 +244,93 @@ describe("Tela de paciente", () => {
     expect(calls).toEqual(["end"]);
   });
 
-  it("leva Nova versão para a página em desenvolvimento", async () => {
-    mockApi();
+  it("explica o que muda no diálogo de encerrar vínculo e cancela sem chamar a API", async () => {
+    const calls = mockApi();
     renderPage();
-    await userEvent.click(await screen.findByRole("button", { name: "Nova versão" }));
-    await waitFor(() => expect(screen.getByText("Nova versão em breve")).toBeVisible());
+
+    await userEvent.click(await screen.findByRole("button", { name: "Mais ações" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Encerrar vínculo" }));
+    const dialog = await screen.findByRole("alertdialog", {
+      name: "Encerrar vínculo com Ana Ribeiro?",
+    });
+    expect(dialog).toHaveTextContent(
+      "A prescrição é arquivada e o paciente deixa de receber novos planos.",
+    );
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(calls).toEqual([]);
+  });
+
+  it("avisa quando não consegue encerrar o vínculo e continua na página", async () => {
+    mockApi();
+    server.use(
+      http.delete("*/api/v1/nutritionists/me/patients/:id/relationship", () =>
+        HttpResponse.json({ code: "INTERNAL_ERROR", message: "x" }, { status: 500 }),
+      ),
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Mais ações" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Encerrar vínculo" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Encerrar vínculo" }));
+
+    expect(await screen.findByText("Não foi possível encerrar o vínculo")).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Ana Ribeiro" })).toBeVisible();
+  });
+
+  it("leva Continuar rascunho para o editor da versão em rascunho", async () => {
+    mockApi();
+    const router = renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Continuar rascunho" }));
+    await waitFor(() => expect(screen.getByText("Editor do rascunho")).toBeVisible());
+    expect(router.state.location.pathname).toBe(`/pacientes/${PATIENT_ID}/prescricao/v3`);
+  });
+
+  describe("Nova versão no cabeçalho", () => {
+    const withoutDraft: Prescription = {
+      ...prescription,
+      versions: prescription.versions?.filter((v) => v.status !== "DRAFT"),
+    };
+
+    it("não aparece quando há rascunho", async () => {
+      mockApi();
+      renderPage();
+      expect(await screen.findByRole("button", { name: "Continuar rascunho" })).toBeVisible();
+      expect(screen.queryByRole("button", { name: "Nova versão" })).toBeNull();
+    });
+
+    it("cria o rascunho e abre o editor nele", async () => {
+      mockApi({ prescriptions: [withoutDraft] });
+      let created = 0;
+      server.use(
+        http.post("*/api/v1/prescriptions/:id/versions", () => {
+          created += 1;
+          return HttpResponse.json({ id: "v9", number: 3, status: "DRAFT", meals: [] });
+        }),
+      );
+      const router = renderPage();
+      await userEvent.click(await screen.findByRole("button", { name: "Nova versão" }));
+      await waitFor(() => expect(screen.getByText("Editor do rascunho")).toBeVisible());
+      expect(created).toBe(1);
+      expect(router.state.location.pathname).toBe(`/pacientes/${PATIENT_ID}/prescricao/v9`);
+    });
+
+    it("409: mostra o aviso com Recarregar", async () => {
+      mockApi({ prescriptions: [withoutDraft] });
+      server.use(
+        http.post("*/api/v1/prescriptions/:id/versions", () =>
+          HttpResponse.json(
+            { status: 409, code: "PRESCRIPTION_CONFLICT", message: "x" },
+            { status: 409 },
+          ),
+        ),
+      );
+      renderPage();
+      await userEvent.click(await screen.findByRole("button", { name: "Nova versão" }));
+      expect(await screen.findByText("Não foi possível criar a nova versão")).toBeVisible();
+      expect(screen.getByRole("button", { name: "Recarregar" })).toBeVisible();
+    });
   });
 
   it("não oferece ações com o vínculo encerrado", async () => {

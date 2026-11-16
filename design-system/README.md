@@ -26,7 +26,7 @@ O portal tem um trabalho: levar o profissional até **uma prescrição publicada
 | `SUBSTITUTIONS_ONLY` | Permitir substituições |
 | `FREE` | Montagem livre |
 | `PENDING` / `SENT` / `FAILED` | Envio pendente / Acesso enviado / Falha no envio |
-| execução | Realizada / Não realizada / Alterada (realizada com substituição) / Sem registro |
+| `LOGGED` / `PARTIAL` / `NOT_LOGGED` | Registrada / Parcial / Sem registro (neutro, nunca descumprimento); a marca extra “Com substituição” aparece ao lado do estado |
 
 - Sem emoji. Números no formato brasileiro: `2.000 kcal`, `140 g`, datas `12/04`, horas `07:00`.
 - Mensagens de erro de login não revelam se o e-mail existe: “E-mail ou senha incorretos.”
@@ -38,7 +38,7 @@ O portal tem um trabalho: levar o profissional até **uma prescrição publicada
 - Texto: `ink` para conteúdo, `ink-muted` para metadados e cabeçalhos de tabela. Os dois passam 4.5:1 em todas as superfícies, nos dois temas.
 - `primary` como texto só sobre `canvas`, `surface` ou `surface-low` (fica abaixo de 4.5:1 sobre `surface-container` no tema claro). `secondary` como texto só sobre `canvas` ou `surface`; em chips use `on-secondary-container`.
 - Estados usam contêineres tonais com texto `on-*`: sucesso/vigente em `primary-container`, alterada/rascunho em `secondary-container`, erro em `danger-container`, neutro em `surface-container`.
-- **Estado nunca depende só de cor.** `StatusChip` sempre leva ícone e texto; verde e vermelho também diferem em ícone (check × X).
+- **Estado nunca depende só de cor.** `StatusChip` sempre leva ícone e texto: Registrada (check), Parcial (relógio), Sem registro (traço) e a marca Com substituição (setas). “Não realizada” não existe no MVP.
 - Tema escuro é completo (mesmos nomes de token); o tema claro é o obrigatório do MVP.
 
 ## Tipografia
@@ -77,6 +77,26 @@ O portal tem um trabalho: levar o profissional até **uma prescrição publicada
 
 ## Navegação
 
-Áreas do MVP, na ordem: **Início**, **Pacientes**, **Perfil e conta**. A área **Administração** é separada e só aparece para `ADMIN`. Dentro de um paciente: abas **Prescrição** e **Acompanhamento**.
+Áreas do MVP, na ordem: **Início**, **Pacientes**, **Perfil e conta**. A área **Administração** é separada e só aparece para `ADMIN` (ver “Administração” abaixo). Dentro de um paciente: abas **Prescrição** e **Acompanhamento**.
 
 As imagens de referência anteriores mostram itens como Prescrições, Modelos e Receitas na lateral e um tile de “Aderência”; eles ficam fora do MVP por decisão de produto.
+
+## Administração
+
+Área própria em `/admin`, para o papel `ADMIN`. Tem `Shell` e `SideNav` próprios; o admin não vê Início, Pacientes nem telas de paciente, e o nutricionista não vê esta área. Quem abre a área de outro papel é levado à própria, sem tela de erro. Nada aqui usa componente novo: as telas são compostas com o que já existe (Q24).
+
+### Navegação
+
+`SideNav` com três itens, nesta ordem: **Usuários** (`users`, área padrão), **Auditoria** (`history`) e **Perfil e conta** (`user`). A marca e o rodapé com a conta e “Sair” são os mesmos do portal do nutricionista. Dentro de um usuário, não há abas; a volta é o link “Usuários” acima do título.
+
+### Composições
+
+- **Usuários.** Título `headline` “Usuários” com o botão primário “Cadastrar nutricionista” (`plus`). Abaixo, busca por nome ou e-mail (`TextField` com `search`) e dois grupos de chips (`aria-pressed`): **Papel** (Todos, Nutricionistas, Pacientes, Administradores) e **Situação** (Todas, Ativas, Desativadas). Depois a contagem (“12 usuários”), a tabela e a paginação “Anterior / Página N de M / Próxima”. A tabela segue o padrão da tabela de Pacientes (card `surface` com borda, cabeçalho `overline` em `surface-container`, linhas separadas por borda fina): colunas Nome (nome em `subtitle` como link e e-mail em `ink-muted`), Papel, Situação (`StatusChip`), Acesso ao app e Criado em. Estados: carregando, erro com “Tentar de novo”, vazio sem filtro e vazio com filtro e “Limpar filtros” (`EmptyState`).
+- **Cadastrar nutricionista.** Página com `TextField` para nome completo, e-mail e registro profissional (opcional), botões “Cadastrar nutricionista” e “Cancelar”. Erro por campo no próprio campo; erro geral em `Alert` `danger`. Ao salvar, abre o detalhe do usuário com um `Alert` do e-mail de acesso.
+- **Detalhe do usuário.** Cabeçalho com nome, e-mail e papel, mais a situação em `StatusChip`. Abaixo, um card com e-mail, registro profissional (nutricionista) e data de criação, e um `Alert` do e-mail de acesso: Envio pendente em `info`, Acesso enviado em `success`, Falha no envio em `warm`, com “Reenviar e-mail” (só nutricionista que ainda não definiu a senha). Ações: “Ver na auditoria” (link), “Desativar conta” ou “Ativar conta”. O admin não vê essas ações na própria conta.
+- **Auditoria.** Título “Auditoria”. Filtros: “De” e “Até” (datas) e “Ação” (seleção), com “Limpar filtros”. Quando a lista vem de “Ver na auditoria”, um chip “Conta: Nome” com remover. Tabela somente leitura com Data e hora (`12/04/2026 14:32`, `tabular-nums`), Autor, Ação, Conta afetada (nomes, não ids) e Detalhe. Ação sempre em português: Nutricionista cadastrado, E-mail de acesso reenviado, Conta ativada, Conta desativada, Vínculos encerrados.
+- **Diálogos.** Ativar e desativar sempre passam por `ConfirmDialog`. Desativar paciente: “Desativar a conta de Maria Lima?” e o texto de consequência. Desativar nutricionista: “Desativar Ana Souza?” com “Ana não poderá mais entrar no portal.”; usa a variante de três botões do `ConfirmDialog` (Cancelar, Somente desativar, Desativar e encerrar vínculos em perigo), com o apoio da terceira ação em `confirmHint`.
+
+### Situação da conta
+
+`StatusChip` com ícone e texto, nunca só cor: **Ativa** (`active`, tom sucesso) e **Desativada** (`ended`, tom neutro), com `label` no lugar do texto padrão. Os papéis aparecem como texto: Nutricionista, Paciente, Administrador. Nunca `ADMIN`, `ACTIVE` ou `INACTIVE`.

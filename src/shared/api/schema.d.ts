@@ -42,7 +42,11 @@ export interface paths {
          */
         put: operations["update"];
         post?: never;
-        delete?: never;
+        /**
+         * Descartar rascunho da prescrição
+         * @description Remove de fato uma versão em rascunho, só pelo autor da prescrição; o número dela fica livre. Se for a única versão, a prescrição inteira é apagada e o paciente volta a aceitar uma nova prescrição. Responde 204; 409 PRESCRIPTION_CONFLICT quando a versão não é rascunho.
+         */
+        delete: operations["discard"];
         options?: never;
         head?: never;
         patch?: never;
@@ -109,7 +113,7 @@ export interface paths {
         };
         /**
          * Consultar perfil atual
-         * @description Retorna os dados do perfil associado ao usuário autenticado.
+         * @description Retorna os dados do perfil associado ao usuário autenticado, com o e-mail da conta. Conta ADMIN não tem perfil: responde só id da conta, role ADMIN e e-mail, com os demais campos nulos (o PUT continua respondendo 403 PROFILE_NOT_AVAILABLE para ADMIN).
          */
         get: operations["get"];
         /**
@@ -223,7 +227,7 @@ export interface paths {
         put?: never;
         /**
          * Arquivar versão da prescrição
-         * @description Arquiva uma versão publicada da prescrição.
+         * @description Arquiva uma versão publicada da prescrição (tira a versão vigente do paciente). Rascunho não pode ser arquivado: responde 409 PRESCRIPTION_CONFLICT; use o descarte.
          */
         post: operations["archive"];
         delete?: never;
@@ -359,7 +363,7 @@ export interface paths {
         put?: never;
         /**
          * Adicionar paciente
-         * @description Cria um vínculo com um paciente e envia suas instruções de acesso.
+         * @description Cria um vínculo com um paciente e envia suas instruções de acesso. Responde 409 `RELATIONSHIP_ALREADY_EXISTS` (nenhum e-mail é enviado) quando o paciente já é vinculado ao nutricionista autenticado: `errors[0]` traz `field=patientId` e o id do paciente em `message`. Responde 409 `RELATIONSHIP_CONFLICT` quando o paciente tem vínculo ativo com outro nutricionista.
          */
         post: operations["create_1"];
         delete?: never;
@@ -535,7 +539,7 @@ export interface paths {
         put?: never;
         /**
          * Autenticar usuário
-         * @description Valida e-mail e senha e inicia a sessão (após tentativas falhas demais por e-mail ou IP, responde 429 LOGIN_RATE_LIMITED com Retry-After): o access token e o refresh token são entregues em cookies HttpOnly, nunca no corpo.
+         * @description Valida e-mail e senha e inicia a sessão (após tentativas falhas demais por e-mail ou IP, responde 429 LOGIN_RATE_LIMITED com Retry-After; com X-Client-Version web/* para conta PATIENT, ou android/* e ios/* para NUTRITIONIST e ADMIN, responde 401 AUTH_INVALID_CREDENTIALS depois de validar a senha, sem contar como falha no limitador; cabeçalho ausente, malformado ou de plataforma desconhecida não restringe): o access token e o refresh token são entregues em cookies HttpOnly, nunca no corpo.
          */
         post: operations["login"];
         delete?: never;
@@ -627,7 +631,7 @@ export interface paths {
         head?: never;
         /**
          * Alterar senha
-         * @description Substitui a senha atual, revoga as sessões anteriores e renova os cookies de sessão.
+         * @description Substitui a senha atual, revoga as sessões anteriores e renova os cookies de sessão. currentPassword é opcional e ignorado quando a conta ainda usa a senha temporária (passwordChangeRequired = true); caso contrário é obrigatório e, se ausente, vazio ou errado, responde 401 AUTH_INVALID_CREDENTIALS.
          */
         patch: operations["change"];
         trace?: never;
@@ -647,7 +651,7 @@ export interface paths {
         head?: never;
         /**
          * Alterar status da conta
-         * @description Ativa ou desativa uma conta. Desativar revoga os refresh tokens (o access token em curso vale até expirar). O administrador não pode alterar a própria conta.
+         * @description Ativa ou desativa uma conta. Desativar revoga os refresh tokens (o access token em curso vale até expirar). O administrador não pode alterar a própria conta. Com `endRelationships: true` (só para desativar uma conta NUTRITIONIST), encerra também todos os vínculos ativos dela, arquiva as prescrições desses vínculos e audita `RELATIONSHIPS_ENDED` (details `count=N`); para outro papel ou para ativação responde 400 `END_RELATIONSHIPS_NOT_APPLICABLE`.
          */
         patch: operations["changeStatus"];
         trace?: never;
@@ -1025,7 +1029,7 @@ export interface paths {
         };
         /**
          * Listar eventos de auditoria
-         * @description Página dos eventos administrativos (criação de nutricionista, reenvio de acesso e mudança de status), do mais recente para o mais antigo. Todos os filtros são opcionais e combinam entre si.
+         * @description Página dos eventos administrativos (criação de nutricionista, reenvio de acesso, mudança de status e encerramento de vínculos), do mais recente para o mais antigo. Cada evento traz, além dos ids, actorName, actorEmail, targetName e targetEmail (nomes nulos quando a conta não tem perfil, como ADMIN; e-mails nulos quando não há conta).  Todos os filtros são opcionais e combinam entre si.
          */
         get: operations["list_4"];
         put?: never;
@@ -1292,6 +1296,7 @@ export interface components {
             /** Format: uuid */
             userAccountId?: string;
             role?: string;
+            email?: string;
             fullName?: string;
             phone?: string;
             registrationNumber?: string;
@@ -1544,11 +1549,16 @@ export interface components {
             meals: components["schemas"]["PlannedMealRequest"][];
         };
         ChangePasswordRequest: {
-            currentPassword: string;
+            currentPassword?: string;
             newPassword: string;
         };
         ChangeUserStatusRequest: {
             status: string;
+            /**
+             * @description Só vale ao desativar uma conta NUTRITIONIST: encerra, na mesma transação, todos os vínculos ativos dela (e arquiva as prescrições desses vínculos). Para outro papel ou para ativação, a resposta é 400 END_RELATIONSHIPS_NOT_APPLICABLE. Padrão false.
+             * @default false
+             */
+            endRelationships: boolean;
         };
         FoodLog: {
             /** Format: uuid */
@@ -1832,9 +1842,13 @@ export interface components {
             occurredAt?: string;
             /** Format: uuid */
             actorAccountId?: string;
+            actorName?: string;
+            actorEmail?: string;
             action?: string;
             /** Format: uuid */
             targetAccountId?: string;
+            targetName?: string;
+            targetEmail?: string;
             details?: string;
         };
         PageResultAuditEventResponse: {
@@ -1986,6 +2000,44 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["VersionOutput"];
                 };
+            };
+            /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Erro do servidor. O corpo não expõe detalhes internos. */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    discard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Erro do cliente. Veja o catálogo de códigos em info.description. */
             "4XX": {
@@ -4599,7 +4651,7 @@ export interface operations {
                 page?: number;
                 size?: number;
                 /** @description Tipo da ação. */
-                action?: "NUTRITIONIST_CREATED" | "ACCESS_EMAIL_RESENT" | "USER_STATUS_CHANGED";
+                action?: "NUTRITIONIST_CREATED" | "ACCESS_EMAIL_RESENT" | "USER_STATUS_CHANGED" | "RELATIONSHIPS_ENDED";
                 /** @description Conta do administrador que executou a ação. */
                 actorId?: string;
                 /** @description Conta afetada pela ação. */

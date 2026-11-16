@@ -1,13 +1,19 @@
-<!-- @dsCard group="Feedback" height=300 -->
+<!-- @dsCard group="Feedback" height=640 -->
 <!doctype html>
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>ConfirmDialog</title></head>
 <body>
-<div id="root" style="padding:0;height:300px;"></div>
+<div id="simple" style="padding:0;height:300px;"></div>
+<div id="three" style="padding:0;height:340px;"></div>
 <script>
-  var P = window.PratoPortal, h = React.createElement;
-  ReactDOM.createRoot(document.getElementById('root')).render(h(P.ConfirmDialog,{inline:true,title:'Publicar versão 4?',confirmLabel:'Publicar versão',onCancel:function(){},onConfirm:function(){}},
+  var P = window.PratoPortal, h = React.createElement, noop = function(){};
+  ReactDOM.createRoot(document.getElementById('simple')).render(h(P.ConfirmDialog,{inline:true,title:'Publicar versão 4?',confirmLabel:'Publicar versão',onCancel:noop,onConfirm:noop},
   h('p',null,'Ana Ribeiro passa a ver esta versão no app. A versão 3 é arquivada e as semanas já planejadas continuam como estão.')));
+  ReactDOM.createRoot(document.getElementById('three')).render(h(P.ConfirmDialog,{inline:true,tone:'danger',title:'Desativar Ana Souza?',
+    secondaryLabel:'Somente desativar',confirmLabel:'Desativar e encerrar vínculos',
+    confirmHint:'Os vínculos com todos os pacientes de Ana são encerrados e as prescrições dela são arquivadas. Os pacientes deixam de receber novos planos e ficam livres para ser cadastrados por outro nutricionista. O histórico de registros é mantido.',
+    onCancel:noop,onSecondary:noop,onConfirm:noop},
+  h('p',null,'Ana não poderá mais entrar no portal.')));
 </script>
 </body>
 </html>

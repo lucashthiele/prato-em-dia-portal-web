@@ -46,10 +46,10 @@
   }
 
   var STATUS = {
-    done: ['Realizada', 'check', 'success'],
-    skipped: ['Não realizada', 'x', 'danger'],
-    substituted: ['Alterada', 'swap', 'warm', 'Realizada com substituição'],
-    none: ['Sem registro', 'minus', 'neutral'],
+    logged: ['Registrada', 'check', 'success'],
+    partial: ['Parcial', 'clock', 'warm', 'Há itens planejados sem registro'],
+    none: ['Sem registro', 'minus', 'neutral', 'Ausência de registro não é descumprimento'],
+    substituted: ['Com substituição', 'swap', 'warm', 'O paciente registrou uma substituição autorizada'],
     draft: ['Rascunho', 'file', 'warm'],
     published: ['Publicada', 'check', 'success'],
     archived: ['Arquivada', 'history', 'neutral'],
@@ -141,7 +141,7 @@
             h('td', { className: 'is-num pd-muted' }, r.time),
             h('td', null, h('div', { className: 'pd-table__meal' }, r.meal), r.items ? h('div', { className: 'pd-table__items' }, r.items) : null),
             h('td', { className: 'is-num' }, r.kcal),
-            showStatus ? h('td', null, r.status ? h(StatusChip, { status: r.status }) : null) : null);
+            showStatus ? h('td', null, r.status ? h('span', { className: 'pd-table__status' }, h(StatusChip, { status: r.status }), r.substituted ? h(StatusChip, { status: 'substituted' }) : null) : null) : null);
         }))));
   }
 
@@ -157,7 +157,7 @@
   }
 
   var POLICIES = [
-    { id: 'RESTRICTED', title: 'Seguir o plano', body: 'O paciente registra exatamente o que foi prescrito. Recomendado para começar.' },
+    { id: 'RESTRICTED', title: 'Seguir o plano', body: 'O paciente registra exatamente o que foi prescrito.' },
     { id: 'SUBSTITUTIONS_ONLY', title: 'Permitir substituições', body: 'O paciente pode trocar um alimento apenas pelas opções que você autorizar em cada item.' },
     { id: 'FREE', title: 'Montagem livre', body: 'O paciente monta as refeições da semana a partir da prescrição, adicionando ou removendo itens.' }
   ];
@@ -170,23 +170,21 @@
         return h('label', { key: o.id, className: cx('pd-policy__opt', sel && 'is-selected') },
           h('input', { type: 'radio', name: name, value: o.id, checked: sel, onChange: function () { p.onChange && p.onChange(o.id); } }),
           h('span', { className: 'pd-policy__dot', 'aria-hidden': true }),
-          h('span', null, h('span', { className: 'pd-policy__title' }, o.title, o.id === 'RESTRICTED' ? h('span', { className: 'pd-policy__tag' }, 'Sugerido') : null),
+          h('span', null, h('span', { className: 'pd-policy__title' }, o.title, o.id === 'SUBSTITUTIONS_ONLY' ? h('span', { className: 'pd-policy__tag' }, 'Sugerido') : null),
             h('span', { className: 'pd-policy__body' }, o.body)));
       }));
   }
 
   function WeekSummary(p) {
     var c = p.counts;
-    var cells = [['done', c.done], ['substituted', c.substituted], ['skipped', c.skipped], ['none', c.none]];
+    var cells = [['Previstas', 'file', 'neutral', c.planned], ['Registradas', 'check', 'success', c.logged], ['Parciais', 'clock', 'warm', c.partial], ['Sem registro', 'minus', 'neutral', c.none], ['Com substituição', 'swap', 'warm', c.substituted]];
     return h('section', { className: 'pd-week' },
       h('div', { className: 'pd-week__head' },
-        h('div', null, h('div', { className: 'pd-week__title' }, p.title), p.subtitle ? h('div', { className: 'pd-week__sub' }, p.subtitle) : null),
-        h('div', { className: 'pd-week__planned' }, h('span', { className: 'pd-week__n' }, c.planned), ' refeições planejadas')),
+        h('div', null, h('div', { className: 'pd-week__title' }, p.title), p.subtitle ? h('div', { className: 'pd-week__sub' }, p.subtitle) : null)),
       h('ul', { className: 'pd-week__grid' }, cells.map(function (x) {
-        var s = STATUS[x[0]];
-        return h('li', { key: x[0], className: cx('pd-week__cell', 'pd-week__cell--' + s[2]), title: s[3] },
-          h('span', { className: 'pd-week__label' }, h(Icon, { name: s[1], size: 16 }), h('span', null, s[0])),
-          h('span', { className: 'pd-week__n' }, x[1]));
+        return h('li', { key: x[0], className: cx('pd-week__cell', 'pd-week__cell--' + x[2]) },
+          h('span', { className: 'pd-week__label' }, h(Icon, { name: x[1], size: 16 }), h('span', null, x[0])),
+          h('span', { className: 'pd-week__n' }, x[3]));
       })));
   }
 
@@ -214,14 +212,16 @@
       h('div', { className: 'pd-dialog', role: 'alertdialog', 'aria-modal': true, 'aria-labelledby': 'pd-dialog-title' },
         h('h2', { id: 'pd-dialog-title', className: 'pd-dialog__title' }, p.title),
         h('div', { className: 'pd-dialog__body' }, p.children),
+        p.confirmHint ? h('p', { id: 'pd-dialog-hint', className: 'pd-dialog__hint' }, p.confirmHint) : null,
         h('div', { className: 'pd-dialog__actions' },
           h(Button, { variant: 'ghost', onClick: p.onCancel }, p.cancelLabel || 'Cancelar'),
-          h(Button, { variant: tone === 'danger' ? 'danger' : 'primary', onClick: p.onConfirm, loading: p.loading }, p.confirmLabel))));
+          p.secondaryLabel ? h(Button, { variant: 'outline', onClick: p.onSecondary, loading: p.loading }, p.secondaryLabel) : null,
+          h(Button, { variant: tone === 'danger' ? 'danger' : 'primary', onClick: p.onConfirm, loading: p.loading, 'aria-describedby': p.confirmHint ? 'pd-dialog-hint' : undefined }, p.confirmLabel))));
   }
 
   function SaveStatus(p) {
     var st = p.state || 'saved';
-    var map = { saving: [null, 'Salvando…'], saved: ['check', 'Rascunho salvo'], error: ['alert', 'Não foi possível salvar'] };
+    var map = { unsaved: ['clock', 'Alterações não salvas'], saving: [null, 'Salvando…'], saved: ['check', 'Rascunho salvo'], error: ['alert', 'Não foi possível salvar'] };
     return h('span', { className: cx('pd-save', 'pd-save--' + st), role: 'status', 'aria-live': 'polite' },
       st === 'saving' ? h('span', { className: 'pd-spinner pd-spinner--sm', 'aria-hidden': true }) : h(Icon, { name: map[st][0], size: 16 }),
       p.label || map[st][1]);

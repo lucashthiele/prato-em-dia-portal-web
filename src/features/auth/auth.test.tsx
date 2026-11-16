@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import { client } from "../../shared/api";
+import { client, configureSession } from "../../shared/api";
 import { server } from "../../test/server";
 import {
   ConsentPage,
@@ -148,23 +148,63 @@ describe("login", () => {
     renderApp("/login");
     await fillAndSubmit("nutri@exemplo.com", "errada");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("E-mail ou senha incorretos");
+    expect(await screen.findByRole("alert")).toHaveTextContent(/^E-mail ou senha incorretos\.$/);
   });
 
-  it("avisa quando há tentativas demais", async () => {
+  it("avisa quando a conta está desativada", async () => {
     mockBackend();
     server.use(
       http.post("*/api/v1/auth/login", () =>
         HttpResponse.json(
-          { status: 429, code: "LOGIN_RATE_LIMITED", message: "Muitas tentativas.", errors: [] },
-          { status: 429 },
+          { status: 403, code: "AUTH_ACCOUNT_INACTIVE", message: "Conta inativa.", errors: [] },
+          { status: 403 },
         ),
       ),
     );
     renderApp("/login");
     await fillAndSubmit("nutri@exemplo.com", "segredo");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Muitas tentativas");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Sua conta está desativada. Fale com a administração do Prato em Dia.",
+    );
+  });
+
+  it.each([
+    ["90", "Muitas tentativas. Tente de novo em 2 minutos."],
+    ["60", "Muitas tentativas. Tente de novo em 1 minuto."],
+    ["301", "Muitas tentativas. Tente de novo em 6 minutos."],
+  ])("avisa quando há tentativas demais (Retry-After %s s)", async (retryAfter, message) => {
+    mockBackend();
+    server.use(
+      http.post("*/api/v1/auth/login", () =>
+        HttpResponse.json(
+          { status: 429, code: "LOGIN_RATE_LIMITED", message: "Muitas tentativas.", errors: [] },
+          { status: 429, headers: { "Retry-After": retryAfter } },
+        ),
+      ),
+    );
+    renderApp("/login");
+    await fillAndSubmit("nutri@exemplo.com", "segredo");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(message);
+  });
+
+  it("avisa quando o servidor responde 5xx", async () => {
+    mockBackend();
+    server.use(
+      http.post("*/api/v1/auth/login", () =>
+        HttpResponse.json(
+          { status: 500, code: "INTERNAL_ERROR", message: "Erro.", errors: [] },
+          { status: 500 },
+        ),
+      ),
+    );
+    renderApp("/login");
+    await fillAndSubmit("nutri@exemplo.com", "segredo");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível entrar agora. Tente de novo em instantes.",
+    );
   });
 
   it("mostra o erro de cada campo quando a validação falha", async () => {
@@ -197,7 +237,7 @@ describe("login", () => {
     await fillAndSubmit("nutri@exemplo.com", "segredo");
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Não foi possível falar com o servidor",
+      "Não foi possível entrar agora. Tente de novo em instantes.",
     );
   });
 });
@@ -331,6 +371,78 @@ describe("cliente HTTP", () => {
 
     expect(data?.fullName).toBe("Marina");
     expect(calls).toBe(2);
+  });
+
+  it("AUTH_INVALID_CREDENTIALS não renova nem expira a sessão", async () => {
+    const onExpired = vi.fn();
+    let refreshes = 0;
+    configureSession({ onExpired, onConsentRequired: vi.fn(), onPasswordChangeRequired: vi.fn() });
+    server.use(
+      http.patch("*/api/v1/me/password", () =>
+        HttpResponse.json(
+          { status: 401, code: "AUTH_INVALID_CREDENTIALS", message: "x", errors: [] },
+          { status: 401 },
+        ),
+      ),
+      http.post("*/api/v1/auth/refresh", () => {
+        refreshes += 1;
+        return unauthorized();
+      }),
+    );
+
+    await expect(
+      client.PATCH("/api/v1/me/password", { body: { currentPassword: "x", newPassword: "y" } }),
+    ).rejects.toMatchObject({ status: 401, code: "AUTH_INVALID_CREDENTIALS" });
+
+    expect(refreshes).toBe(0);
+    expect(onExpired).not.toHaveBeenCalled();
+    configureSession(null);
+  });
+
+  it("AUTHENTICATION_REQUIRED renova, repete e expira a sessão se continuar", async () => {
+    const onExpired = vi.fn();
+    let calls = 0;
+    configureSession({ onExpired, onConsentRequired: vi.fn(), onPasswordChangeRequired: vi.fn() });
+    server.use(
+      http.get("*/api/v1/me", () => {
+        calls += 1;
+        return HttpResponse.json(
+          { status: 401, code: "AUTHENTICATION_REQUIRED", message: "x", errors: [] },
+          { status: 401 },
+        );
+      }),
+      http.post("*/api/v1/auth/refresh", unauthorized),
+    );
+
+    await expect(client.GET("/api/v1/me")).rejects.toMatchObject({
+      code: "AUTHENTICATION_REQUIRED",
+    });
+
+    expect(calls).toBe(2);
+    expect(onExpired).toHaveBeenCalledTimes(1);
+    configureSession(null);
+  });
+
+  it("PASSWORD_CHANGE_REQUIRED avisa a sessão", async () => {
+    const onPasswordChangeRequired = vi.fn();
+    configureSession({
+      onExpired: vi.fn(),
+      onConsentRequired: vi.fn(),
+      onPasswordChangeRequired,
+    });
+    server.use(
+      http.get("*/api/v1/me", () =>
+        HttpResponse.json(
+          { status: 403, code: "PASSWORD_CHANGE_REQUIRED", message: "x", errors: [] },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    await expect(client.GET("/api/v1/me")).rejects.toMatchObject({ status: 403 });
+
+    expect(onPasswordChangeRequired).toHaveBeenCalledTimes(1);
+    configureSession(null);
   });
 
   it("volta ao login quando a renovação falha e a sessão não vale mais", async () => {
