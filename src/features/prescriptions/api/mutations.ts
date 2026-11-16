@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { client, type components } from "../../../shared/api";
 import type { ContentRequest } from "../lib/editor-model";
+import type { Prescription } from "./prescriptions";
 
 type PlanningMode = components["schemas"]["PlanningModeRequest"]["planningMode"];
 
@@ -62,6 +63,43 @@ export function useArchiveVersion(patientId: string) {
       });
     },
     onSuccess: refresh,
+  });
+}
+
+/** Descarta um rascunho (Q15). Sendo a única versão, o servidor apaga a prescrição inteira. */
+export function useDiscardVersion(patientId: string) {
+  const queryClient = useQueryClient();
+  const refresh = useRefreshPrescriptions(patientId);
+  return useMutation({
+    mutationFn: async (versionId: string) => {
+      await client.DELETE("/api/v1/prescription-versions/{versionId}", {
+        params: { path: { versionId } },
+      });
+    },
+    // Tira a versão do cache já: a tela seguinte não pode mostrar o rascunho de novo.
+    onSuccess: (_data, versionId) => {
+      queryClient.setQueryData<Prescription[]>(["prescriptions", patientId], (old) =>
+        old
+          ?.map((p) => ({ ...p, versions: p.versions?.filter((v) => v.id !== versionId) }))
+          .filter((p) => (p.versions?.length ?? 0) > 0),
+      );
+      void refresh();
+    },
+  });
+}
+
+/** Cria o rascunho copiando a vigente (ou, sem vigente, a última publicada) (Q16, S-06). */
+export function useCreateVersion(patientId: string) {
+  const refresh = useRefreshPrescriptions(patientId);
+  return useMutation({
+    mutationFn: async (prescriptionId: string) => {
+      const { data } = await client.POST("/api/v1/prescriptions/{prescriptionId}/versions", {
+        params: { path: { prescriptionId } },
+      });
+      return data;
+    },
+    // Espera a lista atualizar: o editor procura o rascunho novo nela.
+    onSuccess: () => refresh(),
   });
 }
 
