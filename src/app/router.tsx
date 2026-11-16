@@ -6,6 +6,13 @@ import {
   RequireConsent,
   RequireSession,
 } from "../features/auth";
+import {
+  AdminShell,
+  AuditPage,
+  CreateNutritionistPage,
+  UserDetailPage,
+  UsersListPage,
+} from "../features/admin";
 import { HomePage } from "../features/home";
 import { PatientPage, PatientsListPage } from "../features/patients";
 import { ComingSoon } from "./ComingSoon";
@@ -36,6 +43,24 @@ export const routes = [
             element: <ComingSoon title="Nova versão da prescrição" />,
           },
           { path: "/perfil", element: <ComingSoon title="Perfil e conta" /> },
+        ],
+      },
+    ],
+  },
+  {
+    // Área admin. Sem guarda de papel neste branch: só a sessão protege (o coordenador liga a guarda).
+    element: <RequireSession />,
+    children: [
+      {
+        element: <AdminShell />,
+        children: [
+          { path: "/admin", element: <Navigate to="/admin/usuarios" replace /> },
+          { path: "/admin/usuarios", element: <UsersListPage /> },
+          { path: "/admin/usuarios/novo", element: <CreateNutritionistPage /> },
+          { path: "/admin/usuarios/:id", element: <UserDetailPage /> },
+          { path: "/admin/auditoria", element: <AuditPage /> },
+          // O coordenador troca pelo AdminProfilePage quando juntar os branches.
+          { path: "/admin/perfil", element: <ComingSoon title="Perfil e conta" /> },
         ],
       },
     ],
