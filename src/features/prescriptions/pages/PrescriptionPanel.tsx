@@ -1,7 +1,20 @@
+import { useState } from "react";
+import { useNavigate } from "react-router";
 import { ApiError } from "../../../shared/api";
-import { Alert, Button, EmptyState, VersionHistory, type Version } from "../../../shared/ui";
+import {
+  Alert,
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  VersionHistory,
+  type PlanningPolicy,
+  type Version,
+} from "../../../shared/ui";
+import { useArchiveVersion, useCreatePrescription } from "../api/mutations";
 import { usePatientPrescriptions, type PrescriptionVersion } from "../api/prescriptions";
+import { CreatePrescriptionDialog } from "../components/CreatePrescriptionDialog";
 import { MealList } from "../components/MealList";
+import { PlanningModeCard } from "../components/PlanningModeCard";
 import { VersionDetails } from "../components/VersionDetails";
 import {
   formatDate,
@@ -17,7 +30,21 @@ function summary(version: PrescriptionVersion): string {
 }
 
 export function PrescriptionPanel({ patientId }: { patientId: string }) {
+  const navigate = useNavigate();
   const query = usePatientPrescriptions(patientId);
+  const create = useCreatePrescription(patientId);
+  const archive = useArchiveVersion(patientId);
+  const [dialog, setDialog] = useState<"create" | "archive" | null>(null);
+
+  function confirmCreate(policy: PlanningPolicy) {
+    create.mutate(policy, {
+      onSuccess: (created) => {
+        const first = created?.versions?.[0]?.id;
+        setDialog(null);
+        if (first) navigate(`/pacientes/${patientId}/prescricao/${first}`);
+      },
+    });
+  }
 
   if (query.isPending) {
     return (
@@ -50,9 +77,33 @@ export function PrescriptionPanel({ patientId }: { patientId: string }) {
   );
   if (!prescription || versions.length === 0) {
     return (
-      <EmptyState title="Nenhuma prescrição ainda" icon="file">
-        Quando você criar a primeira versão, ela aparece aqui.
-      </EmptyState>
+      <>
+        <EmptyState
+          title="Nenhuma prescrição ainda"
+          icon="file"
+          action={
+            <Button
+              icon="plus"
+              onClick={() => {
+                create.reset();
+                setDialog("create");
+              }}
+            >
+              Criar prescrição
+            </Button>
+          }
+        >
+          Crie a prescrição para montar a primeira versão. O paciente só vê o plano depois que você
+          publicar.
+        </EmptyState>
+        <CreatePrescriptionDialog
+          open={dialog === "create"}
+          loading={create.isPending}
+          failed={create.isError}
+          onConfirm={confirmCreate}
+          onCancel={() => setDialog(null)}
+        />
+      </>
     );
   }
 
@@ -60,6 +111,7 @@ export function PrescriptionPanel({ patientId }: { patientId: string }) {
   const draft = versions.find((v) => v.status === "DRAFT");
   const mode = planningModeLabel(prescription.planningMode);
   const targets = current?.nutritionTargets ?? [];
+  const everPublished = versions.some((v) => v.status !== "DRAFT");
 
   const history: Version[] = versions.map((version) => ({
     number: version.number ?? 0,
@@ -73,7 +125,19 @@ export function PrescriptionPanel({ patientId }: { patientId: string }) {
   return (
     <div className={styles.panel}>
       {draft ? (
-        <Alert tone="warm" title="Há um rascunho não publicado">
+        <Alert
+          tone="warm"
+          title="Há um rascunho não publicado"
+          action={
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate(`/pacientes/${patientId}/prescricao/${draft.id}`)}
+            >
+              Continuar rascunho
+            </Button>
+          }
+        >
           A versão {draft.number} foi criada em {formatDate(draft.createdAt)}. O paciente ainda vê a
           versão vigente no app.
         </Alert>
@@ -104,13 +168,38 @@ export function PrescriptionPanel({ patientId }: { patientId: string }) {
               </dl>
             ) : null}
             <MealList version={current} />
+            <div>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  archive.reset();
+                  setDialog("archive");
+                }}
+              >
+                Arquivar versão
+              </Button>
+            </div>
+            {archive.isError ? (
+              <Alert tone="danger" title="Não foi possível arquivar a versão">
+                Tente novamente em instantes.
+              </Alert>
+            ) : null}
           </>
         ) : (
-          <EmptyState title="Nenhuma versão publicada" icon="file">
+          <EmptyState title="Sem versão vigente" icon="file">
             O paciente só vê a prescrição depois que você publicar uma versão.
           </EmptyState>
         )}
       </section>
+
+      {prescription.id && prescription.planningMode ? (
+        <PlanningModeCard
+          patientId={patientId}
+          prescriptionId={prescription.id}
+          mode={prescription.planningMode}
+          everPublished={everPublished}
+        />
+      ) : null}
 
       <section className={styles.section} aria-labelledby="history-title">
         <h2 id="history-title" className={styles.title}>
@@ -118,6 +207,23 @@ export function PrescriptionPanel({ patientId }: { patientId: string }) {
         </h2>
         <VersionHistory versions={history} />
       </section>
+
+      <ConfirmDialog
+        open={dialog === "archive"}
+        title={`Arquivar a versão ${current?.number}?`}
+        confirmLabel="Arquivar versão"
+        tone="danger"
+        loading={archive.isPending}
+        onConfirm={() =>
+          current?.id && archive.mutate(current.id, { onSettled: () => setDialog(null) })
+        }
+        onCancel={() => setDialog(null)}
+      >
+        <p>
+          O paciente mantém o plano da semana em curso, mas nenhum plano novo será gerado até você
+          publicar outra versão.
+        </p>
+      </ConfirmDialog>
     </div>
   );
 }

@@ -131,12 +131,6 @@ function PatientScreen({ patientId }: { patientId: string }) {
                   Reenviar acesso
                 </Button>
               ) : null}
-              <Button
-                icon="plus"
-                onClick={() => navigate(`/pacientes/${patientId}/prescricao/nova`)}
-              >
-                Nova versão
-              </Button>
               <ActionMenu
                 label="Mais ações"
                 items={[
