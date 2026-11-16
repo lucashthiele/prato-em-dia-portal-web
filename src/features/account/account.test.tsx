@@ -195,16 +195,32 @@ describe("primeiro acesso", () => {
     expect(router.state.location.pathname).toBe("/definir-senha");
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Senha temporária"), "temporaria-123");
     await user.type(screen.getByLabelText("Nova senha"), "uma-senha-bem-longa");
     await user.type(screen.getByLabelText("Confirmar nova senha"), "uma-senha-bem-longa");
     await user.click(screen.getByRole("button", { name: "Definir senha" }));
 
     expect(await screen.findByRole("heading", { name: "Antes de continuar" })).toBeVisible();
     expect(router.state.location.pathname).toBe("/termos");
-    expect(backend.passwordBodies).toEqual([
-      { currentPassword: "temporaria-123", newPassword: "uma-senha-bem-longa" },
-    ]);
+    expect(backend.passwordBodies).toEqual([{ newPassword: "uma-senha-bem-longa" }]);
+  });
+
+  it("depois de recarregar, 403 PASSWORD_CHANGE_REQUIRED leva a definir senha", async () => {
+    const backend = mockBackend({ loggedIn: true });
+    server.use(http.get("*/api/v1/me", () => apiError(403, "PASSWORD_CHANGE_REQUIRED")));
+    const router = renderApp("/perfil");
+
+    expect(await screen.findByRole("heading", { name: "Definir senha" })).toBeVisible();
+    expect(router.state.location.pathname).toBe("/definir-senha");
+    expect(backend.passwordBodies).toEqual([]);
+  });
+
+  it("403 PASSWORD_CHANGE_REQUIRED em qualquer rota leva a definir senha", async () => {
+    mockBackend({ loggedIn: true });
+    server.use(http.put("*/api/v1/me", () => apiError(403, "PASSWORD_CHANGE_REQUIRED")));
+    const router = renderApp("/perfil");
+    await userEvent.setup().click(await screen.findByRole("button", { name: "Salvar perfil" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/definir-senha"));
   });
 
   it("sem termos pendentes, vai direto para a área do papel", async () => {
@@ -214,7 +230,6 @@ describe("primeiro acesso", () => {
     await screen.findByRole("heading", { name: "Definir senha" });
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Senha temporária"), "temporaria-123");
     await user.type(screen.getByLabelText("Nova senha"), "uma-senha-bem-longa");
     await user.type(screen.getByLabelText("Confirmar nova senha"), "uma-senha-bem-longa");
     await user.click(screen.getByRole("button", { name: "Definir senha" }));
@@ -239,13 +254,13 @@ describe("primeiro acesso", () => {
     await login();
     await screen.findByRole("heading", { name: "Definir senha" });
     expect(screen.getByText("Use de 12 a 72 caracteres.")).toBeVisible();
+    expect(screen.queryByLabelText(/senha (temporária|atual)/i)).not.toBeInTheDocument();
 
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Nova senha"), "curta");
     await user.type(screen.getByLabelText("Confirmar nova senha"), "outra");
     await user.click(screen.getByRole("button", { name: "Definir senha" }));
 
-    expect(screen.getByText("Informe a senha temporária.")).toBeVisible();
     expect(screen.getByLabelText("Nova senha")).toHaveAccessibleDescription(
       "Use de 12 a 72 caracteres.",
     );
@@ -261,7 +276,6 @@ describe("primeiro acesso", () => {
 
     const user = userEvent.setup();
     const long = "a".repeat(73);
-    await user.type(screen.getByLabelText("Senha temporária"), "temporaria-123");
     await user.type(screen.getByLabelText("Nova senha"), long);
     await user.type(screen.getByLabelText("Confirmar nova senha"), long);
     await user.click(screen.getByRole("button", { name: "Definir senha" }));
@@ -303,13 +317,32 @@ describe("alterar senha", () => {
     expect(backend.passwordBodies).toEqual([]);
   });
 
-  it("mostra erro no campo quando a senha atual está incorreta", async () => {
+  it("mostra erro no campo quando a senha atual está incorreta, sem perder a sessão", async () => {
     mockBackend({ loggedIn: true });
-    server.use(http.patch("*/api/v1/me/password", () => apiError(400, "AUTH_INVALID_CREDENTIALS")));
-    renderApp("/perfil/senha");
+    let refreshes = 0;
+    server.use(
+      http.patch("*/api/v1/me/password", () => apiError(401, "AUTH_INVALID_CREDENTIALS")),
+      http.post("*/api/v1/auth/refresh", () => {
+        refreshes += 1;
+        return new HttpResponse(null, { status: 401 });
+      }),
+    );
+    const router = renderApp("/perfil/senha");
     await fill("errada-errada-1", "nova-senha-segura");
 
-    expect(await screen.findByText("Senha incorreta. Confira e tente de novo.")).toBeVisible();
+    expect(await screen.findByText("Senha atual incorreta.")).toBeVisible();
+    expect(screen.getByLabelText("Senha atual")).toHaveAttribute("aria-invalid", "true");
+    expect(router.state.location.pathname).toBe("/perfil/senha");
+    expect(refreshes).toBe(0);
+  });
+
+  it("encerra a sessão quando a troca de senha recebe AUTHENTICATION_REQUIRED", async () => {
+    mockBackend({ loggedIn: true });
+    server.use(http.patch("*/api/v1/me/password", () => apiError(401, "AUTHENTICATION_REQUIRED")));
+    const router = renderApp("/perfil/senha");
+    await fill("senha-atual-123", "nova-senha-segura");
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
   });
 
   it("mostra o erro por campo devolvido pelo servidor", async () => {
