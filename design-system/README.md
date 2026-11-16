@@ -26,7 +26,7 @@ O portal tem um trabalho: levar o profissional até **uma prescrição publicada
 | `SUBSTITUTIONS_ONLY` | Permitir substituições |
 | `FREE` | Montagem livre |
 | `PENDING` / `SENT` / `FAILED` | Envio pendente / Acesso enviado / Falha no envio |
-| execução | Realizada / Não realizada / Alterada (realizada com substituição) / Sem registro |
+| `LOGGED` / `PARTIAL` / `NOT_LOGGED` | Registrada / Parcial / Sem registro (neutro, nunca descumprimento); a marca extra “Com substituição” aparece ao lado do estado |
 
 - Sem emoji. Números no formato brasileiro: `2.000 kcal`, `140 g`, datas `12/04`, horas `07:00`.
 - Mensagens de erro de login não revelam se o e-mail existe: “E-mail ou senha incorretos.”
@@ -38,7 +38,7 @@ O portal tem um trabalho: levar o profissional até **uma prescrição publicada
 - Texto: `ink` para conteúdo, `ink-muted` para metadados e cabeçalhos de tabela. Os dois passam 4.5:1 em todas as superfícies, nos dois temas.
 - `primary` como texto só sobre `canvas`, `surface` ou `surface-low` (fica abaixo de 4.5:1 sobre `surface-container` no tema claro). `secondary` como texto só sobre `canvas` ou `surface`; em chips use `on-secondary-container`.
 - Estados usam contêineres tonais com texto `on-*`: sucesso/vigente em `primary-container`, alterada/rascunho em `secondary-container`, erro em `danger-container`, neutro em `surface-container`.
-- **Estado nunca depende só de cor.** `StatusChip` sempre leva ícone e texto; verde e vermelho também diferem em ícone (check × X).
+- **Estado nunca depende só de cor.** `StatusChip` sempre leva ícone e texto: Registrada (check), Parcial (relógio), Sem registro (traço) e a marca Com substituição (setas). “Não realizada” não existe no MVP.
 - Tema escuro é completo (mesmos nomes de token); o tema claro é o obrigatório do MVP.
 
 ## Tipografia

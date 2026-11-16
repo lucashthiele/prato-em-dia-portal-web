@@ -7,10 +7,10 @@
 <script>
   var P = window.PratoPortal, h = React.createElement;
   ReactDOM.createRoot(document.getElementById('root')).render(h(P.MealTable,{caption:'Refeições da semana 8',rows:[
-  {time:'07:00',meal:'Café da manhã',items:'Aveia com frutas vermelhas',kcal:400,status:'done'},
-  {time:'10:00',meal:'Lanche',items:'Iogurte natural + castanhas',kcal:180,status:'done'},
-  {time:'12:30',meal:'Almoço',items:'Frango, arroz integral, salada',kcal:650,status:'substituted'},
-  {time:'16:00',meal:'Lanche da tarde',items:'Sanduíche integral',kcal:220,status:'skipped'},
+  {time:'07:00',meal:'Café da manhã',items:'Aveia com frutas vermelhas',kcal:400,status:'logged'},
+  {time:'10:00',meal:'Lanche',items:'Iogurte natural + castanhas',kcal:180,status:'logged'},
+  {time:'12:30',meal:'Almoço',items:'Frango, arroz integral, salada',kcal:650,status:'logged',substituted:true},
+  {time:'16:00',meal:'Lanche da tarde',items:'Sanduíche integral',kcal:220,status:'partial'},
   {time:'19:30',meal:'Jantar',items:'Omelete + salada',kcal:550,status:'none'}]}));
 </script>
 </body>

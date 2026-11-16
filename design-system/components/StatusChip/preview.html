@@ -7,7 +7,7 @@
 <script>
   var P = window.PratoPortal, h = React.createElement;
   ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'grid',gap:10}},
-  h('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},['done','substituted','skipped','none'].map(function(s){return h(P.StatusChip,{key:s,status:s})})),
+  h('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},['logged','partial','none','substituted'].map(function(s){return h(P.StatusChip,{key:s,status:s})})),
   h('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},['draft','published','archived','active','ended'].map(function(s){return h(P.StatusChip,{key:s,status:s})})),
   h('div',{style:{display:'flex',flexWrap:'wrap',gap:8}},['pending','sent','failed'].map(function(s){return h(P.StatusChip,{key:s,status:s})}))));
 </script>

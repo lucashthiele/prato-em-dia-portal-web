@@ -126,8 +126,6 @@ textarea.pd-field__input { min-height: 96px; resize: vertical; }
 .pd-week__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--space-3); }
 .pd-week__title { font: 700 18px/24px var(--font-sans); }
 .pd-week__sub { color: var(--ink-muted); }
-.pd-week__planned { color: var(--ink-muted); }
-.pd-week__planned .pd-week__n { font-size: 18px; color: var(--ink); }
 .pd-week__grid { list-style: none; margin: var(--space-4) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-3); }
 .pd-week__cell { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); min-width: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-low); }
 .pd-week__cell .pd-week__n { text-align: right; }
@@ -176,3 +174,4 @@ textarea.pd-field__input { min-height: 96px; resize: vertical; }
   .pd-sidenav__list { flex-direction: row; flex-wrap: wrap; }
   .pd-sidenav__user { display: none; }
 }
+.pd-table__status { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); }
