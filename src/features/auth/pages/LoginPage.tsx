@@ -9,17 +9,16 @@ function fieldError(error: unknown, field: string): string | undefined {
   return error.fieldErrors.find((item) => item.field === field)?.message;
 }
 
-function bannerMessage(error: unknown): string {
+/** Mensagens por `code` (Q5). Sem indicar se o e-mail existe. */
+function loginErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.isNetworkError) {
-      return "Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.";
+    if (error.code === "AUTH_INVALID_CREDENTIALS") return "E-mail ou senha incorretos.";
+    if (error.code === "AUTH_ACCOUNT_INACTIVE") {
+      return "Sua conta está desativada. Fale com a administração do Prato em Dia.";
     }
-    // Credencial inválida: sem indicar se o e-mail existe.
-    if (error.status === 401)
-      return "E-mail ou senha incorretos. Confira os dados e tente novamente.";
-    if (error.status === 400) return "Revise os campos destacados e tente de novo.";
-    if (error.status === 429) {
-      return "Muitas tentativas de entrada. Aguarde alguns minutos e tente de novo.";
+    if (error.code === "LOGIN_RATE_LIMITED") {
+      const minutes = Math.max(1, Math.ceil((error.retryAfterSeconds ?? 60) / 60));
+      return `Muitas tentativas. Tente de novo em ${minutes} ${minutes === 1 ? "minuto" : "minutos"}.`;
     }
   }
   return "Não foi possível entrar agora. Tente de novo em instantes.";
@@ -49,7 +48,7 @@ export function LoginPage() {
           <h1 className={styles.heading}>Entrar</h1>
           <p className={styles.subhead}>Acesse seus pacientes e prescrições.</p>
         </div>
-        {login.isError ? <Alert tone="danger">{bannerMessage(login.error)}</Alert> : null}
+        {login.isError ? <Alert tone="danger">{loginErrorMessage(login.error)}</Alert> : null}
         <form className={styles.form} onSubmit={handleSubmit} noValidate>
           <TextField
             label="E-mail"

@@ -8,13 +8,14 @@ interface Credentials {
 }
 
 export function useLogin() {
-  const { refresh } = useSession();
+  const { refresh, requirePasswordChange } = useSession();
   return useMutation({
     // Os cookies da sessão vêm na resposta; depois do login, `GET /me` diz se há termos pendentes.
     mutationFn: async (credentials: Credentials) => {
-      await client.POST("/api/v1/auth/login", { body: credentials });
+      const { data } = await client.POST("/api/v1/auth/login", { body: credentials });
+      return data;
     },
-    onSuccess: () => refresh(),
+    onSuccess: (data) => (data?.passwordChangeRequired ? requirePasswordChange() : refresh()),
   });
 }
 
