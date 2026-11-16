@@ -3,10 +3,10 @@ import { Icon, type IconName } from "./Icon";
 import styles from "./StatusChip.module.css";
 
 export type Status =
-  | "done"
-  | "skipped"
-  | "substituted"
+  | "logged"
+  | "partial"
   | "none"
+  | "substituted"
   | "draft"
   | "published"
   | "archived"
@@ -20,10 +20,15 @@ type Tone = "success" | "warm" | "danger" | "neutral";
 
 // [rótulo, ícone, tom, dica]: estado sempre com ícone e texto, nunca só cor.
 const STATUS: Record<Status, [string, IconName, Tone, string?]> = {
-  done: ["Realizada", "check", "success"],
-  skipped: ["Não realizada", "x", "danger"],
-  substituted: ["Alterada", "swap", "warm", "Realizada com substituição"],
-  none: ["Sem registro", "minus", "neutral"],
+  logged: ["Registrada", "check", "success"],
+  partial: ["Parcial", "clock", "warm", "Há itens planejados sem registro"],
+  none: ["Sem registro", "minus", "neutral", "Ausência de registro não é descumprimento"],
+  substituted: [
+    "Com substituição",
+    "swap",
+    "warm",
+    "O paciente registrou uma substituição autorizada",
+  ],
   draft: ["Rascunho", "file", "warm"],
   published: ["Publicada", "check", "success"],
   archived: ["Arquivada", "history", "neutral"],
