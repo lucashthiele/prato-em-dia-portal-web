@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "../../test/server";
 import { AuditPage } from ".";
-import { auditActionLabel } from "./lib/labels";
+import { auditActionLabel, auditDetailText } from "./lib/labels";
 import { auditFiltersToQuery, parseAuditFilters } from "./lib/filters";
 import { renderRoutes } from "./test-utils";
 import type { AuditEvent } from "./api/audit";
@@ -103,6 +103,13 @@ describe("rótulos e filtros da auditoria", () => {
     expect(auditActionLabel("USER_STATUS_CHANGED", "INACTIVE")).toBe("Conta desativada");
     expect(auditActionLabel("USER_STATUS_CHANGED", "ACTIVE -> INACTIVE")).toBe("Conta desativada");
     expect(auditActionLabel("RELATIONSHIPS_ENDED")).toBe("Vínculos encerrados");
+  });
+
+  it("traduz o detalhe cru do servidor", () => {
+    expect(auditDetailText("ACTIVE -> INACTIVE", "USER_STATUS_CHANGED")).toBe("Ativa → Desativada");
+    expect(auditDetailText("email=ana@exemplo.com", "NUTRITIONIST_CREATED")).toBe(
+      "E-mail: ana@exemplo.com",
+    );
   });
 
   it("converte a URL em parâmetros da API e ignora lixo", () => {

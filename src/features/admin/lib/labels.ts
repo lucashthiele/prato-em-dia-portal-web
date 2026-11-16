@@ -79,7 +79,11 @@ export function auditDetailText(details?: string, action?: string): string {
     if (!Number.isInteger(count)) return "—";
     return count === 1 ? "1 vínculo encerrado" : `${count} vínculos encerrados`;
   }
-  return details.replace(/INACTIVE/g, "Desativada").replace(/ACTIVE/g, "Ativa");
+  return details
+    .replace(/INACTIVE/g, "Desativada")
+    .replace(/ACTIVE/g, "Ativa")
+    .replace(/\s*->\s*/g, " → ")
+    .replace(/^email=/, "E-mail: ");
 }
 
 /** Id curto para identificar uma conta sem nome (primeiros 8 caracteres do UUID). */
