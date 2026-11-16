@@ -31,14 +31,21 @@ export interface CreateFailure {
   /** Campo que recebe a mensagem; sem campo, a mensagem vai num aviso no topo. */
   errors: NewPatientErrors;
   banner?: string;
+  /** Paciente já vinculado (RELATIONSHIP_ALREADY_EXISTS): destino do link "Abrir paciente". */
+  existingPatientId?: string;
 }
 
-/**
- * RELATIONSHIP_ALREADY_EXISTS depende do S-03 (o servidor ainda não manda o `patientId`):
- * cai no erro genérico, sem o link "Abrir paciente".
- */
+export const ALREADY_YOURS = "Este paciente já está na sua lista.";
+export const EMAIL_FAILED =
+  "Não foi possível enviar o e-mail de acesso ao paciente. Tente de novo em instantes. Se o paciente já aparecer na sua lista, use “Reenviar acesso” na página dele.";
+
 export function createFailure(error: unknown): CreateFailure {
   if (error instanceof ApiError) {
+    if (error.code === "RELATIONSHIP_ALREADY_EXISTS") {
+      const id = error.fieldErrors.find((item) => item.field === "patientId")?.message?.trim();
+      return { errors: { email: ALREADY_YOURS }, existingPatientId: id || undefined };
+    }
+    if (error.code === "RELATIONSHIP_EMAIL_FAILED") return { errors: {}, banner: EMAIL_FAILED };
     if (error.code === "RELATIONSHIP_CONFLICT") return { errors: { email: RELATIONSHIP_CONFLICT } };
     if (error.code === "PATIENT_ACCOUNT_CONFLICT") {
       return { errors: { email: PATIENT_ACCOUNT_CONFLICT } };

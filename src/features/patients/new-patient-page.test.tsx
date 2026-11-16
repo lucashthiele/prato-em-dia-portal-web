@@ -124,14 +124,41 @@ describe("Cadastro de paciente", () => {
     expect(screen.queryByText(/nutricionista|admin/i, { selector: "p p" })).toBeNull();
   });
 
-  it("trata RELATIONSHIP_ALREADY_EXISTS como erro genérico, sem o link Abrir paciente", async () => {
+  it("RELATIONSHIP_ALREADY_EXISTS com id mostra o texto e o link para o paciente", async () => {
+    mockCreate(() =>
+      HttpResponse.json(
+        {
+          code: "RELATIONSHIP_ALREADY_EXISTS",
+          message: "x",
+          errors: [{ field: "patientId", message: "p7" }],
+        },
+        { status: 409 },
+      ),
+    );
+    const router = renderPage();
+    await fill("Ana Ribeiro", "ana@exemplo.com");
+    expect(await screen.findByText("Este paciente já está na sua lista.")).toBeVisible();
+    expect(screen.getByLabelText("E-mail")).toBeInvalid();
+    await userEvent.click(screen.getByRole("link", { name: "Abrir paciente" }));
+    expect(router.state.location.pathname).toBe("/pacientes/p7");
+  });
+
+  it("RELATIONSHIP_ALREADY_EXISTS sem id mostra só o texto", async () => {
     mockCreate(() => apiError(409, "RELATIONSHIP_ALREADY_EXISTS"));
     renderPage();
     await fill("Ana Ribeiro", "ana@exemplo.com");
-    expect(
-      await screen.findByText("Não foi possível cadastrar o paciente. Tente de novo em instantes."),
-    ).toBeVisible();
+    expect(await screen.findByText("Este paciente já está na sua lista.")).toBeVisible();
     expect(screen.queryByRole("link", { name: "Abrir paciente" })).toBeNull();
+  });
+
+  it("RELATIONSHIP_EMAIL_FAILED mostra aviso claro e permite tentar de novo", async () => {
+    mockCreate(() => apiError(503, "RELATIONSHIP_EMAIL_FAILED"));
+    renderPage();
+    await fill("Ana Ribeiro", "ana@exemplo.com");
+    expect(
+      await screen.findByText(/Não foi possível enviar o e-mail de acesso ao paciente/),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Cadastrar paciente" })).toBeEnabled();
   });
 
   it("mostra erro genérico em falha do servidor e permite tentar de novo", async () => {
