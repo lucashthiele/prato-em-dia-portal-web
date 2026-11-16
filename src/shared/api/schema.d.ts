@@ -1029,7 +1029,7 @@ export interface paths {
         };
         /**
          * Listar eventos de auditoria
-         * @description Página dos eventos administrativos (criação de nutricionista, reenvio de acesso, mudança de status e encerramento de vínculos), do mais recente para o mais antigo. Cada evento traz, além dos ids, actorName, targetName e targetEmail (nulos quando não há conta ou perfil).  Todos os filtros são opcionais e combinam entre si.
+         * @description Página dos eventos administrativos (criação de nutricionista, reenvio de acesso, mudança de status e encerramento de vínculos), do mais recente para o mais antigo. Cada evento traz, além dos ids, actorName, actorEmail, targetName e targetEmail (nomes nulos quando a conta não tem perfil, como ADMIN; e-mails nulos quando não há conta).  Todos os filtros são opcionais e combinam entre si.
          */
         get: operations["list_4"];
         put?: never;
@@ -1843,6 +1843,7 @@ export interface components {
             /** Format: uuid */
             actorAccountId?: string;
             actorName?: string;
+            actorEmail?: string;
             action?: string;
             /** Format: uuid */
             targetAccountId?: string;

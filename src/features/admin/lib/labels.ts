@@ -100,3 +100,13 @@ export function auditAccountName(id?: string, name?: string, email?: string): st
   if (!id) return undefined;
   return name || email || `Conta ${shortId(id)}`;
 }
+
+/**
+ * Autor na auditoria: o nome do perfil e, sem perfil (administrador), a parte do e-mail antes do
+ * @, que identifica a conta sem ocupar a coluna. Por último, "Conta" + id curto.
+ */
+export function auditActorName(id?: string, name?: string, email?: string): string | undefined {
+  if (!id) return undefined;
+  const handle = email?.split("@")[0];
+  return name || handle || `Conta ${shortId(id)}`;
+}

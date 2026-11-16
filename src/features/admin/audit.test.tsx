@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "../../test/server";
 import { AuditPage } from ".";
-import { auditActionLabel, auditDetailText } from "./lib/labels";
+import { auditActionLabel, auditActorName, auditDetailText } from "./lib/labels";
 import { auditFiltersToQuery, parseAuditFilters } from "./lib/filters";
 import { renderRoutes } from "./test-utils";
 import type { AuditEvent } from "./api/audit";
@@ -103,6 +103,14 @@ describe("rótulos e filtros da auditoria", () => {
     expect(auditActionLabel("USER_STATUS_CHANGED", "INACTIVE")).toBe("Conta desativada");
     expect(auditActionLabel("USER_STATUS_CHANGED", "ACTIVE -> INACTIVE")).toBe("Conta desativada");
     expect(auditActionLabel("RELATIONSHIPS_ENDED")).toBe("Vínculos encerrados");
+  });
+
+  it("mostra o autor sem perfil pela parte do e-mail antes do @", () => {
+    const id = "72b3c847-d964-39e2-aabf-72b8193b9bb1";
+    expect(auditActorName(id, "Admin Geral", "admin@exemplo.com")).toBe("Admin Geral");
+    expect(auditActorName(id, undefined, "admin.geral@exemplo.com")).toBe("admin.geral");
+    expect(auditActorName(id)).toBe("Conta 72b3c847");
+    expect(auditActorName(undefined, "Admin Geral")).toBeUndefined();
   });
 
   it("traduz o detalhe cru do servidor", () => {

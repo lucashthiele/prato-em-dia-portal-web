@@ -1,12 +1,11 @@
 import { Link } from "react-router";
 import type { AuditEvent } from "../api/audit";
-import { auditAccountName, auditActionLabel, auditDetailText } from "../lib/labels";
+import { auditAccountName, auditActionLabel, auditActorName, auditDetailText } from "../lib/labels";
 import styles from "./Table.module.css";
 
 const dateTime = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
 
-function Account({ id, name, email }: { id?: string; name?: string; email?: string }) {
-  const label = auditAccountName(id, name, email);
+function Account({ id, label }: { id?: string; label?: string }) {
   if (!id || !label) return <span className={styles.muted}>—</span>;
   return (
     <Link className={styles.name} to={`/admin/usuarios/${id}`}>
@@ -35,14 +34,20 @@ export function AuditTable({ events }: { events: AuditEvent[] }) {
                 {event.occurredAt ? dateTime.format(new Date(event.occurredAt)) : ""}
               </td>
               <td>
-                <Account id={event.actorAccountId} name={event.actorName} />
+                <Account
+                  id={event.actorAccountId}
+                  label={auditActorName(event.actorAccountId, event.actorName, event.actorEmail)}
+                />
               </td>
               <td>{auditActionLabel(event.action, event.details)}</td>
               <td>
                 <Account
                   id={event.targetAccountId}
-                  name={event.targetName}
-                  email={event.targetEmail}
+                  label={auditAccountName(
+                    event.targetAccountId,
+                    event.targetName,
+                    event.targetEmail,
+                  )}
                 />
               </td>
               <td className={styles.muted}>{auditDetailText(event.details, event.action)}</td>
