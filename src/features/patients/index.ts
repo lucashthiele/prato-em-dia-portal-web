@@ -2,3 +2,4 @@ export { usePatients, useResendAccess, type Patient, type PatientsPage } from ".
 export { deliveryStatus, hasAccessFailure } from "./lib/patients";
 export { PatientsListPage } from "./pages/PatientsListPage";
 export { PatientPage } from "./pages/PatientPage";
+export { NewPatientPage } from "./pages/NewPatientPage";

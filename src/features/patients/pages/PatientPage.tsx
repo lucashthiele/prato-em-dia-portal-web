@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { ApiError } from "../../../shared/api";
 import {
   ActionMenu,
@@ -13,6 +13,7 @@ import {
 import { PrescriptionPanel } from "../../prescriptions";
 import { useEndRelationship, usePatient } from "../api/patient";
 import { useResendAccess } from "../api/patients";
+import { AccessEmailAlert } from "../components/AccessEmailAlert";
 import { deliveryStatus } from "../lib/patients";
 import styles from "./PatientPage.module.css";
 
@@ -23,6 +24,9 @@ const TABS = [
 
 type Dialog = "resend" | "end" | null;
 
+/** Por quanto tempo o portal consulta o estado do e-mail logo após o cadastro. */
+const ACCESS_EMAIL_POLL_WINDOW_MS = 30_000;
+
 export function PatientPage() {
   const { patientId = "" } = useParams();
   // `key` zera o estado local ao trocar de paciente: nunca mostra dados do anterior.
@@ -32,11 +36,24 @@ export function PatientPage() {
 function PatientScreen({ patientId }: { patientId: string }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const patient = usePatient(patientId);
+  const location = useLocation();
+  // O Alert do e-mail só aparece ao chegar do cadastro (`state` do navigate).
+  const fromCreate = (location.state as { accessEmailAlert?: boolean } | null)?.accessEmailAlert;
+  const [pollWindow, setPollWindow] = useState({ open: fromCreate === true, run: 0 });
+  const patient = usePatient(patientId, { poll: pollWindow.open });
   const resend = useResendAccess();
   const end = useEndRelationship();
   const [dialog, setDialog] = useState<Dialog>(null);
   const [resent, setResent] = useState(false);
+
+  useEffect(() => {
+    if (!pollWindow.open) return;
+    const timer = setTimeout(
+      () => setPollWindow((prev) => ({ ...prev, open: false })),
+      ACCESS_EMAIL_POLL_WINDOW_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [pollWindow.open, pollWindow.run]);
 
   const tab = TABS.some((t) => t.id === params.get("aba")) ? params.get("aba")! : "prescricao";
 
@@ -156,6 +173,20 @@ function PatientScreen({ patientId }: { patientId: string }) {
         }
       />
 
+      {fromCreate && !ended ? (
+        <AccessEmailAlert
+          status={data.emailDeliveryStatus}
+          email={data.patientEmail ?? ""}
+          timedOut={!pollWindow.open}
+          resending={resend.isPending && dialog === null}
+          onResend={() =>
+            resend.mutate(patientId, {
+              onSuccess: () => setPollWindow((prev) => ({ open: true, run: prev.run + 1 })),
+            })
+          }
+        />
+      ) : null}
+
       {resent ? (
         <Alert tone="success">Acesso reenviado para {name}.</Alert>
       ) : resend.isError ? (
@@ -204,7 +235,7 @@ function PatientScreen({ patientId }: { patientId: string }) {
 
       <ConfirmDialog
         open={dialog === "end"}
-        title="Encerrar vínculo?"
+        title={`Encerrar vínculo com ${name}?`}
         confirmLabel="Encerrar vínculo"
         tone="danger"
         loading={end.isPending}
@@ -212,8 +243,8 @@ function PatientScreen({ patientId }: { patientId: string }) {
         onCancel={() => setDialog(null)}
       >
         <p>
-          Você deixa de ver a prescrição e o acompanhamento de {name}. Essa ação não pode ser
-          desfeita.
+          Você deixa de ver a prescrição e o acompanhamento de {name}. A prescrição é arquivada e o
+          paciente deixa de receber novos planos. O histórico de registros é mantido.
         </p>
       </ConfirmDialog>
     </div>

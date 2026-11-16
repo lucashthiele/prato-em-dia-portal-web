@@ -236,6 +236,41 @@ describe("Tela de paciente", () => {
     expect(calls).toEqual(["end"]);
   });
 
+  it("explica o que muda no diálogo de encerrar vínculo e cancela sem chamar a API", async () => {
+    const calls = mockApi();
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Mais ações" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Encerrar vínculo" }));
+    const dialog = await screen.findByRole("alertdialog", {
+      name: "Encerrar vínculo com Ana Ribeiro?",
+    });
+    expect(dialog).toHaveTextContent(
+      "A prescrição é arquivada e o paciente deixa de receber novos planos.",
+    );
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(calls).toEqual([]);
+  });
+
+  it("avisa quando não consegue encerrar o vínculo e continua na página", async () => {
+    mockApi();
+    server.use(
+      http.delete("*/api/v1/nutritionists/me/patients/:id/relationship", () =>
+        HttpResponse.json({ code: "INTERNAL_ERROR", message: "x" }, { status: 500 }),
+      ),
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Mais ações" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Encerrar vínculo" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Encerrar vínculo" }));
+
+    expect(await screen.findByText("Não foi possível encerrar o vínculo")).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Ana Ribeiro" })).toBeVisible();
+  });
+
   it("leva Nova versão para a página em desenvolvimento", async () => {
     mockApi();
     renderPage();
