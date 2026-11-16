@@ -1,9 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { client } from "../../../shared/api";
 
-export function usePatient(patientId: string) {
+/** Intervalo da nova consulta enquanto o e-mail de acesso está pendente. */
+export const ACCESS_EMAIL_POLL_MS = 3_000;
+
+export function usePatient(patientId: string, { poll = false }: { poll?: boolean } = {}) {
   return useQuery({
     queryKey: ["patients", patientId],
+    // Com `poll`, consulta de novo enquanto o envio do e-mail de acesso está pendente.
+    refetchInterval: (query) =>
+      poll && query.state.data?.emailDeliveryStatus === "PENDING" ? ACCESS_EMAIL_POLL_MS : false,
     queryFn: async () => {
       const { data } = await client.GET("/api/v1/nutritionists/me/patients/{patientId}", {
         params: { path: { patientId } },

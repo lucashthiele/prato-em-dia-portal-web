@@ -7,7 +7,7 @@ import {
   RequireSession,
 } from "../features/auth";
 import { HomePage } from "../features/home";
-import { PatientPage, PatientsListPage } from "../features/patients";
+import { NewPatientPage, PatientPage, PatientsListPage } from "../features/patients";
 import { ComingSoon } from "./ComingSoon";
 import { Shell } from "./Shell";
 
@@ -28,8 +28,8 @@ export const routes = [
         children: [
           { path: "/", element: <HomePage /> },
           { path: "/pacientes", element: <PatientsListPage /> },
-          // Rotas reservadas até os tickets de cadastro, editor de prescrição e Perfil.
-          { path: "/pacientes/novo", element: <ComingSoon title="Adicionar paciente" /> },
+          // Rotas reservadas até os tickets de editor de prescrição e Perfil.
+          { path: "/pacientes/novo", element: <NewPatientPage /> },
           { path: "/pacientes/:patientId", element: <PatientPage /> },
           {
             path: "/pacientes/:patientId/prescricao/nova",
