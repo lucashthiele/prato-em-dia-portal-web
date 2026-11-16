@@ -7,7 +7,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { components } from "../../shared/api";
 import { server } from "../../test/server";
 import { PrescriptionEditorPage, PrescriptionPanel } from ".";
-import { entryFromSaved, toRequest, emptyDraft, newEntry } from "./lib/editor-model";
+import {
+  entryFromSaved,
+  toRequest,
+  emptyDraft,
+  newEntry,
+  toPortionRefs,
+  entryQuantity,
+} from "./lib/editor-model";
 
 type Prescription = components["schemas"]["PrescriptionOutput"];
 type Version = components["schemas"]["VersionOutput"];
@@ -953,6 +960,25 @@ describe("Modelo do editor", () => {
 
   it("pré-seleciona a porção mais caseira, não a de gramas", () => {
     expect(newEntry(egg, portions).portionIndex).toBe(1);
+  });
+
+  it("trata a porção caseira do catálogo em g como múltiplos, pelo type", () => {
+    // No catálogo real a colher vem em g: "Colher servir cheia", 55 g, type HOUSEHOLD.
+    const rice = toPortionRefs([
+      { id: "p100", label: "100 g", quantity: 100, unit: "g", type: "STANDARD", active: true },
+      { id: "pc", label: "Colher servir cheia", quantity: 55, unit: "g", type: "HOUSEHOLD" },
+    ]);
+    const entry = newEntry({ id: "f9", name: "Arroz" }, rice);
+    expect(entry.portionIndex).toBe(1);
+    expect(entry.amount).toBe("1");
+    expect(entryQuantity({ ...entry, amount: "2" })).toEqual({ quantity: 110, unit: "g" });
+    expect(
+      entryFromSaved(
+        { foodPortionId: "pc", quantity: 110, unit: "g" },
+        { id: "f9", name: "Arroz" },
+        rice,
+      ).amount,
+    ).toBe("2");
   });
 
   it("só envia refeições incluídas e metas preenchidas, com order da ordem fixa", () => {

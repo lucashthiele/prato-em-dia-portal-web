@@ -32,6 +32,11 @@ export interface PortionRef {
   /** Quantidade que a porção representa na unidade dela (1 fatia, 100 g). */
   quantity: number;
   unit: string;
+  /**
+   * Medida caseira (colher, fatia): a quantidade é digitada em múltiplos dela. No catálogo, a
+   * porção caseira também vem em g ("Colher servir cheia", 55 g), por isso vale o `type`.
+   */
+  household?: boolean;
 }
 
 /** Um alimento prescrito (item ou substituição) com a porção escolhida. */
@@ -74,6 +79,7 @@ export function newKey(): string {
 
 /** Porções em gramas ou mililitros são digitadas direto na unidade; as demais, em múltiplos. */
 export function isDirect(portion: PortionRef): boolean {
+  if (portion.household !== undefined) return !portion.household;
   return ["g", "ml"].includes(portion.unit.trim().toLowerCase());
 }
 
@@ -102,6 +108,7 @@ export function toPortionRefs(portions: FoodPortion[]): PortionRef[] {
       label: p.label ?? `${p.quantity ?? 1} ${p.unit}`,
       quantity: p.quantity ?? 1,
       unit: p.unit as string,
+      ...(p.type ? { household: p.type === "HOUSEHOLD" } : {}),
     }));
 }
 
