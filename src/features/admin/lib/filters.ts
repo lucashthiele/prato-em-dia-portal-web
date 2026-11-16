@@ -72,6 +72,7 @@ const ACTION_PARAM: Record<AuditAction, string> = {
   NUTRITIONIST_CREATED: "cadastro",
   ACCESS_EMAIL_RESENT: "reenvio",
   USER_STATUS_CHANGED: "situacao",
+  RELATIONSHIPS_ENDED: "vinculos",
 };
 
 /** Só as ações que o filtro do servidor aceita. */

@@ -86,7 +86,7 @@ export function useChangeStatus() {
     mutationFn: async ({ id, status }: { id: string; status: AccountStatus }) => {
       await client.PATCH("/api/v1/admin/users/{id}/status", {
         params: { path: { id } },
-        body: { status },
+        body: { status, endRelationships: false },
       });
     },
     // A lista, o detalhe e a auditoria (nova linha) mudam.
