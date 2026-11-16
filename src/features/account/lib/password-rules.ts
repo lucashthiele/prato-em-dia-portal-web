@@ -11,9 +11,13 @@ export interface PasswordValues {
 export type PasswordErrors = Partial<Record<keyof PasswordValues, string>>;
 
 /** Regras do cliente; o servidor valida de novo. */
-export function validatePassword(values: PasswordValues, currentLabel: string): PasswordErrors {
+export function validatePassword(
+  values: PasswordValues,
+  currentLabel: string | null,
+): PasswordErrors {
   const errors: PasswordErrors = {};
-  if (!values.currentPassword) errors.currentPassword = `Informe ${currentLabel}.`;
+  // `null`: primeiro acesso, sem senha atual (S-01).
+  if (currentLabel !== null && !values.currentPassword) errors.currentPassword = `Informe ${currentLabel}.`;
   if (values.newPassword.length < PASSWORD_MIN || values.newPassword.length > PASSWORD_MAX) {
     errors.newPassword = PASSWORD_HELP;
   }

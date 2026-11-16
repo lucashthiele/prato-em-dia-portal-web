@@ -16,6 +16,8 @@ export interface SessionAccessors {
   onExpired: () => void;
   /** O backend exige o aceite dos termos vigentes antes de qualquer outra rota. */
   onConsentRequired: () => void;
+  /** O servidor exige trocar a senha inicial antes de qualquer outra rota. */
+  onPasswordChangeRequired: () => void;
 }
 
 let accessors: SessionAccessors | null = null;
@@ -57,6 +59,12 @@ function refreshSession(): Promise<boolean> {
 // Cópia do pedido para repetir após a renovação (o corpo de um Request só é lido uma vez).
 const retryable = new WeakMap<Request, Request>();
 
+// Portões do servidor: o pedido falha até a pessoa aceitar os termos ou trocar a senha inicial.
+function notifyGate(error: ApiError): void {
+  if (error.code === "CONSENT_REQUIRED") accessors?.onConsentRequired();
+  else if (error.code === "PASSWORD_CHANGE_REQUIRED") accessors?.onPasswordChangeRequired();
+}
+
 const apiMiddleware: Middleware = {
   onRequest({ request }) {
     request.headers.set("X-Client-Version", clientVersion);
@@ -66,20 +74,23 @@ const apiMiddleware: Middleware = {
   async onResponse({ request, response }) {
     if (response.ok) return;
     const original = retryable.get(request);
-    if (response.status === 401 && original) {
+    const first = await toApiError(response);
+    // Só 401 de sessão (AUTHENTICATION_REQUIRED, ou sem código conhecido) renova e expira.
+    // AUTH_INVALID_CREDENTIALS é erro de credencial da própria operação (ex.: senha atual errada).
+    if (response.status === 401 && original && first.code !== "AUTH_INVALID_CREDENTIALS") {
       // O refresh token é de uso único: se outra aba renovou primeiro, a nossa renovação falha,
       // mas os cookies já são novos. Por isso o pedido é repetido uma vez de qualquer forma.
       await refreshSession();
       const retried = await rawFetch(original);
       if (retried.ok) return retried;
       const error = await toApiError(retried);
-      if (retried.status === 401) accessors?.onExpired();
-      else if (error.code === "CONSENT_REQUIRED") accessors?.onConsentRequired();
+      if (retried.status === 401 && error.code !== "AUTH_INVALID_CREDENTIALS") {
+        accessors?.onExpired();
+      } else notifyGate(error);
       throw error;
     }
-    const error = await toApiError(response);
-    if (error.code === "CONSENT_REQUIRED") accessors?.onConsentRequired();
-    throw error;
+    notifyGate(first);
+    throw first;
   },
   onError({ error }) {
     // O openapi-fetch também passa por aqui o ApiError lançado em onResponse.

@@ -6,16 +6,11 @@ import { PASSWORD_HELP, validatePassword, type PasswordErrors } from "../lib/pas
 import styles from "./PasswordForm.module.css";
 
 interface PasswordFormProps {
-  /** `first`: senha temporária do primeiro acesso (contorno do S-01). `change`: senha atual. */
+  /** `first`: primeiro acesso, sem senha atual (S-01). `change`: pede a senha atual. */
   mode: "first" | "change";
   onSuccess: () => void;
   submitLabel: string;
 }
-
-const CURRENT = {
-  first: { label: "Senha temporária", noun: "a senha temporária" },
-  change: { label: "Senha atual", noun: "a senha atual" },
-} as const;
 
 function serverErrors(error: unknown): PasswordErrors {
   if (!(error instanceof ApiError)) return {};
@@ -25,7 +20,7 @@ function serverErrors(error: unknown): PasswordErrors {
     if (item.field === "newPassword") errors.newPassword = item.message;
   }
   if (error.code === "AUTH_INVALID_CREDENTIALS") {
-    errors.currentPassword = "Senha incorreta. Confira e tente de novo.";
+    errors.currentPassword = "Senha atual incorreta.";
   }
   return errors;
 }
@@ -34,7 +29,7 @@ export function PasswordForm({ mode, onSuccess, submitLabel }: PasswordFormProps
   const change = useChangePassword();
   const [values, setValues] = useState({ currentPassword: "", newPassword: "", confirmation: "" });
   const [clientErrors, setClientErrors] = useState<PasswordErrors>({});
-  const current = CURRENT[mode];
+  const askCurrent = mode === "change";
 
   const fromServer = serverErrors(change.error);
   const errors = { ...fromServer, ...clientErrors };
@@ -47,11 +42,13 @@ export function PasswordForm({ mode, onSuccess, submitLabel }: PasswordFormProps
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    const found = validatePassword(values, current.noun);
+    const found = validatePassword(values, askCurrent ? "a senha atual" : null);
     setClientErrors(found);
     if (Object.keys(found).length > 0) return;
     change.mutate(
-      { currentPassword: values.currentPassword, newPassword: values.newPassword },
+      askCurrent
+        ? { currentPassword: values.currentPassword, newPassword: values.newPassword }
+        : { newPassword: values.newPassword },
       {
         onSuccess: () => {
           setValues({ currentPassword: "", newPassword: "", confirmation: "" });
@@ -68,14 +65,16 @@ export function PasswordForm({ mode, onSuccess, submitLabel }: PasswordFormProps
           Não foi possível alterar a senha agora. Tente de novo em instantes.
         </Alert>
       ) : null}
-      <TextField
-        label={current.label}
-        type="password"
-        autoComplete="current-password"
-        value={values.currentPassword}
-        onChange={set("currentPassword")}
-        error={errors.currentPassword}
-      />
+      {askCurrent ? (
+        <TextField
+          label="Senha atual"
+          type="password"
+          autoComplete="current-password"
+          value={values.currentPassword}
+          onChange={set("currentPassword")}
+          error={errors.currentPassword}
+        />
+      ) : null}
       <TextField
         label="Nova senha"
         type="password"

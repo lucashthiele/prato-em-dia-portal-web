@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import { client } from "../../shared/api";
+import { client, configureSession } from "../../shared/api";
 import { server } from "../../test/server";
 import {
   ConsentPage,
@@ -371,6 +371,78 @@ describe("cliente HTTP", () => {
 
     expect(data?.fullName).toBe("Marina");
     expect(calls).toBe(2);
+  });
+
+  it("AUTH_INVALID_CREDENTIALS não renova nem expira a sessão", async () => {
+    const onExpired = vi.fn();
+    let refreshes = 0;
+    configureSession({ onExpired, onConsentRequired: vi.fn(), onPasswordChangeRequired: vi.fn() });
+    server.use(
+      http.patch("*/api/v1/me/password", () =>
+        HttpResponse.json(
+          { status: 401, code: "AUTH_INVALID_CREDENTIALS", message: "x", errors: [] },
+          { status: 401 },
+        ),
+      ),
+      http.post("*/api/v1/auth/refresh", () => {
+        refreshes += 1;
+        return unauthorized();
+      }),
+    );
+
+    await expect(
+      client.PATCH("/api/v1/me/password", { body: { currentPassword: "x", newPassword: "y" } }),
+    ).rejects.toMatchObject({ status: 401, code: "AUTH_INVALID_CREDENTIALS" });
+
+    expect(refreshes).toBe(0);
+    expect(onExpired).not.toHaveBeenCalled();
+    configureSession(null);
+  });
+
+  it("AUTHENTICATION_REQUIRED renova, repete e expira a sessão se continuar", async () => {
+    const onExpired = vi.fn();
+    let calls = 0;
+    configureSession({ onExpired, onConsentRequired: vi.fn(), onPasswordChangeRequired: vi.fn() });
+    server.use(
+      http.get("*/api/v1/me", () => {
+        calls += 1;
+        return HttpResponse.json(
+          { status: 401, code: "AUTHENTICATION_REQUIRED", message: "x", errors: [] },
+          { status: 401 },
+        );
+      }),
+      http.post("*/api/v1/auth/refresh", unauthorized),
+    );
+
+    await expect(client.GET("/api/v1/me")).rejects.toMatchObject({
+      code: "AUTHENTICATION_REQUIRED",
+    });
+
+    expect(calls).toBe(2);
+    expect(onExpired).toHaveBeenCalledTimes(1);
+    configureSession(null);
+  });
+
+  it("PASSWORD_CHANGE_REQUIRED avisa a sessão", async () => {
+    const onPasswordChangeRequired = vi.fn();
+    configureSession({
+      onExpired: vi.fn(),
+      onConsentRequired: vi.fn(),
+      onPasswordChangeRequired,
+    });
+    server.use(
+      http.get("*/api/v1/me", () =>
+        HttpResponse.json(
+          { status: 403, code: "PASSWORD_CHANGE_REQUIRED", message: "x", errors: [] },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    await expect(client.GET("/api/v1/me")).rejects.toMatchObject({ status: 403 });
+
+    expect(onPasswordChangeRequired).toHaveBeenCalledTimes(1);
+    configureSession(null);
   });
 
   it("volta ao login quando a renovação falha e a sessão não vale mais", async () => {

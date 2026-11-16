@@ -3,8 +3,8 @@ import { PasswordForm } from "../components/PasswordForm";
 import styles from "./AccountPages.module.css";
 
 /**
- * Primeiro acesso (Q2): fora do Shell, no layout do login. Enquanto o S-01 não sai, o servidor
- * exige a senha temporária (`currentPassword`), então a tela também a pede.
+ * Primeiro acesso (Q2): fora do Shell, no layout do login. Sem senha temporária: o servidor a
+ * dispensa enquanto a conta usa a senha inicial (S-01).
  */
 export function SetPasswordPage() {
   const { refresh } = useSession();
