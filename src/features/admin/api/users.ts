@@ -83,10 +83,19 @@ export function useResendAccessEmail() {
 export function useChangeStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: AccountStatus }) => {
+    mutationFn: async ({
+      id,
+      status,
+      endRelationships = false,
+    }: {
+      id: string;
+      status: AccountStatus;
+      /** S-08: só vale ao desativar nutricionista; encerra os vínculos e arquiva as prescrições. */
+      endRelationships?: boolean;
+    }) => {
       await client.PATCH("/api/v1/admin/users/{id}/status", {
         params: { path: { id } },
-        body: { status, endRelationships: false },
+        body: { status, endRelationships },
       });
     },
     // A lista, o detalhe e a auditoria (nova linha) mudam.

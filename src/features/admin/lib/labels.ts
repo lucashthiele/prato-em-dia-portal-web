@@ -68,8 +68,31 @@ export function firstName(fullName?: string): string {
   return fullName?.trim().split(/\s+/)[0] || "A pessoa";
 }
 
-/** O `details` vem em texto livre do servidor; troca os enums de situação por rótulos. */
-export function auditDetailText(details?: string): string {
+/**
+ * O `details` vem em texto livre do servidor. Em `RELATIONSHIPS_ENDED` é `count=N`; nas demais
+ * ações, troca os enums de situação por rótulos.
+ */
+export function auditDetailText(details?: string, action?: string): string {
   if (!details) return "—";
+  if (action === "RELATIONSHIPS_ENDED") {
+    const count = Number(/^count=(\d+)$/.exec(details.trim())?.[1]);
+    if (!Number.isInteger(count)) return "—";
+    return count === 1 ? "1 vínculo encerrado" : `${count} vínculos encerrados`;
+  }
   return details.replace(/INACTIVE/g, "Desativada").replace(/ACTIVE/g, "Ativa");
+}
+
+/** Id curto para identificar uma conta sem nome (primeiros 8 caracteres do UUID). */
+export function shortId(id: string): string {
+  return id.slice(0, 8);
+}
+
+/**
+ * Nome de uma conta na auditoria (S-09). Os campos vêm nulos quando a conta não tem perfil ou
+ * foi removida; nesse caso mostra o e-mail (só do alvo) e, por último, "Conta" + id curto: um
+ * texto neutro que não afirma que a conta foi removida (administradores podem não ter perfil).
+ */
+export function auditAccountName(id?: string, name?: string, email?: string): string | undefined {
+  if (!id) return undefined;
+  return name || email || `Conta ${shortId(id)}`;
 }

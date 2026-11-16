@@ -85,9 +85,9 @@ function UserScreen({ id }: { id: string }) {
   // O servidor só reenvia a nutricionista ativo que ainda não definiu a senha.
   const canResend = isNutritionist && active && data.passwordChangeRequired !== false;
 
-  function confirmStatus() {
+  function confirmStatus(endRelationships = false) {
     change.mutate(
-      { id, status: active ? "INACTIVE" : "ACTIVE" },
+      { id, status: active ? "INACTIVE" : "ACTIVE", endRelationships },
       { onSettled: () => setDialog(null) },
     );
   }
@@ -135,9 +135,7 @@ function UserScreen({ id }: { id: string }) {
       {resent ? <Alert tone="success">E-mail de acesso reenviado para {data.email}.</Alert> : null}
       {resend.isError ? (
         <Alert tone="danger" title="Não foi possível reenviar o e-mail">
-          {resend.error instanceof ApiError && resend.error.isNetworkError
-            ? "Não foi possível falar com o servidor."
-            : "Tente novamente em instantes."}
+          {resendErrorText(resend.error)}
         </Alert>
       ) : null}
       {change.isError ? (
@@ -145,7 +143,7 @@ function UserScreen({ id }: { id: string }) {
           tone="danger"
           title={active ? "Não foi possível desativar a conta" : "Não foi possível ativar a conta"}
         >
-          Tente novamente em instantes.
+          {changeErrorText(change.error)}
         </Alert>
       ) : null}
 
@@ -197,6 +195,29 @@ function UserScreen({ id }: { id: string }) {
   );
 }
 
+function resendErrorText(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.isNetworkError) return "Não foi possível falar com o servidor.";
+    if (error.code === "ACCESS_EMAIL_NOT_AVAILABLE") {
+      return "O reenvio só vale para nutricionista com conta ativa que ainda não definiu a senha.";
+    }
+  }
+  return "Tente novamente em instantes.";
+}
+
+function changeErrorText(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.isNetworkError) return "Não foi possível falar com o servidor.";
+    if (error.code === "ADMIN_CANNOT_CHANGE_OWN_STATUS") {
+      return "Você não pode alterar a situação da sua própria conta.";
+    }
+    if (error.code === "END_RELATIONSHIPS_NOT_APPLICABLE") {
+      return "Só é possível encerrar vínculos ao desativar um nutricionista. Atualize a página e tente de novo.";
+    }
+  }
+  return "Tente novamente em instantes.";
+}
+
 const ACCESS_ALERT: Record<AccessEmail, { tone: "info" | "success" | "warm"; title: string }> = {
   pending: { tone: "info", title: "Envio pendente" },
   sent: { tone: "success", title: "Acesso enviado" },
@@ -243,17 +264,14 @@ interface StatusDialogProps {
   user: AdminUser;
   name: string;
   loading: boolean;
-  onConfirm: () => void;
+  onConfirm: (endRelationships?: boolean) => void;
   onCancel: () => void;
 }
 
-/**
- * Textos de Q22b (nutricionista) e Q23 (paciente). A terceira ação de Q22b, "Desativar e encerrar
- * vínculos", espera o servidor (S-07/S-08); a variante de três botões já existe no ConfirmDialog.
- */
+/** Textos de Q22b (nutricionista, três ações; S-08) e Q23 (paciente). */
 function StatusDialog({ open, user, name, loading, onConfirm, onCancel }: StatusDialogProps) {
   const first = firstName(user.fullName);
-  const common = { open, loading, onConfirm, onCancel };
+  const common = { open, loading, onConfirm: () => onConfirm(), onCancel };
 
   if (!isActive(user.status)) {
     return (
@@ -269,7 +287,11 @@ function StatusDialog({ open, user, name, loading, onConfirm, onCancel }: Status
         {...common}
         tone="danger"
         title={`Desativar ${name}?`}
-        confirmLabel="Somente desativar"
+        confirmLabel="Desativar e encerrar vínculos"
+        onConfirm={() => onConfirm(true)}
+        secondaryLabel="Somente desativar"
+        onSecondary={() => onConfirm(false)}
+        confirmHint={`Os vínculos com todos os pacientes de ${first} são encerrados e as prescrições dela são arquivadas. Os pacientes deixam de receber novos planos e ficam livres para ser cadastrados por outro nutricionista. O histórico de registros é mantido.`}
       >
         <p>{first} não poderá mais entrar no portal.</p>
       </ConfirmDialog>

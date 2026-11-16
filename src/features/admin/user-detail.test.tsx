@@ -20,7 +20,7 @@ function mockUser(initial: AdminUser) {
   server.use(
     http.get("*/api/v1/admin/users/:id", () => HttpResponse.json(current)),
     http.patch("*/api/v1/admin/users/:id/status", async ({ request }) => {
-      const body = (await request.json()) as { status: string };
+      const body = (await request.json()) as { status: string; endRelationships: boolean };
       changes.push(body);
       current = { ...current, status: body.status };
       return new HttpResponse(null, { status: 204 });
@@ -73,7 +73,7 @@ describe("detalhe do usuário", () => {
     mockUser(u);
     server.use(
       http.post("*/api/v1/admin/nutritionists/:id/access-email", () =>
-        HttpResponse.json({ status: 409, code: "CONFLICT" }, { status: 409 }),
+        HttpResponse.json({ status: 500, code: "INTERNAL_ERROR" }, { status: 500 }),
       ),
     );
     renderRoutes(routes, url(u));
@@ -81,6 +81,31 @@ describe("detalhe do usuário", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Reenviar e-mail" }));
 
     expect(await screen.findByText("Não foi possível reenviar o e-mail")).toBeInTheDocument();
+    expect(screen.getByText("Tente novamente em instantes.")).toBeInTheDocument();
+  });
+
+  it("explica ACCESS_EMAIL_NOT_AVAILABLE no reenvio", async () => {
+    mockMe();
+    const u = user(1, { accessEmail: { status: "FAILED" } });
+    mockUser(u);
+    server.use(
+      http.post("*/api/v1/admin/nutritionists/:id/access-email", () =>
+        HttpResponse.json(
+          { status: 409, code: "ACCESS_EMAIL_NOT_AVAILABLE", message: "x" },
+          { status: 409 },
+        ),
+      ),
+    );
+    renderRoutes(routes, url(u));
+
+    await userEvent.click(await screen.findByRole("button", { name: "Reenviar e-mail" }));
+
+    expect(await screen.findByText("Não foi possível reenviar o e-mail")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "O reenvio só vale para nutricionista com conta ativa que ainda não definiu a senha.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("não oferece reenvio para paciente, administrador, conta desativada nem senha já definida", async () => {
@@ -144,7 +169,7 @@ describe("detalhe do usuário", () => {
 });
 
 describe("ativar e desativar", () => {
-  it("desativa nutricionista com o texto da Q22b e só duas ações", async () => {
+  it("desativa nutricionista com o texto da Q22b e as três ações", async () => {
     mockMe();
     const u = user(1, { fullName: "Ana Souza" });
     const { changes } = mockUser(u);
@@ -159,15 +184,104 @@ describe("ativar e desativar", () => {
       within(dialog)
         .getAllByRole("button")
         .map((b) => b.textContent),
-    ).toEqual(["Cancelar", "Somente desativar"]);
-    expect(within(dialog).queryByText(/encerrar vínculos/)).not.toBeInTheDocument();
+    ).toEqual(["Cancelar", "Somente desativar", "Desativar e encerrar vínculos"]);
+    expect(
+      within(dialog).getByText(
+        "Os vínculos com todos os pacientes de Ana são encerrados e as prescrições dela são arquivadas. Os pacientes deixam de receber novos planos e ficam livres para ser cadastrados por outro nutricionista. O histórico de registros é mantido.",
+      ),
+    ).toBeInTheDocument();
 
     await userEvent.click(within(dialog).getByRole("button", { name: "Somente desativar" }));
 
-    await waitFor(() => expect(changes).toEqual([{ status: "INACTIVE" }]));
+    await waitFor(() => expect(changes).toEqual([{ status: "INACTIVE", endRelationships: false }]));
     expect(await screen.findByText("Desativada")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ativar conta" })).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+
+  it("desativa e encerra os vínculos na terceira ação", async () => {
+    mockMe();
+    const u = user(1, { fullName: "Ana Souza" });
+    const { changes } = mockUser(u);
+    renderRoutes(routes, url(u));
+
+    await userEvent.click(await screen.findByRole("button", { name: "Desativar conta" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Desativar e encerrar vínculos" }),
+    );
+
+    await waitFor(() => expect(changes).toEqual([{ status: "INACTIVE", endRelationships: true }]));
+    expect(await screen.findByText("Desativada")).toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+
+  it("não oferece encerrar vínculos para paciente nem na ativação", async () => {
+    mockMe();
+    const patient = user(1, { role: "PATIENT" });
+    mockUser(patient);
+    renderRoutes(routes, url(patient));
+    await userEvent.click(await screen.findByRole("button", { name: "Desativar conta" }));
+    expect(
+      within(await screen.findByRole("alertdialog")).queryByRole("button", {
+        name: "Desativar e encerrar vínculos",
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("explica END_RELATIONSHIPS_NOT_APPLICABLE (400)", async () => {
+    mockMe();
+    const u = user(1);
+    mockUser(u);
+    server.use(
+      http.patch("*/api/v1/admin/users/:id/status", () =>
+        HttpResponse.json(
+          { status: 400, code: "END_RELATIONSHIPS_NOT_APPLICABLE", message: "x" },
+          { status: 400 },
+        ),
+      ),
+    );
+    renderRoutes(routes, url(u));
+
+    await userEvent.click(await screen.findByRole("button", { name: "Desativar conta" }));
+    await userEvent.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "Desativar e encerrar vínculos",
+      }),
+    );
+
+    expect(await screen.findByText("Não foi possível desativar a conta")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Só é possível encerrar vínculos ao desativar um nutricionista. Atualize a página e tente de novo.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("explica ADMIN_CANNOT_CHANGE_OWN_STATUS (409)", async () => {
+    mockMe();
+    const u = user(1);
+    mockUser(u);
+    server.use(
+      http.patch("*/api/v1/admin/users/:id/status", () =>
+        HttpResponse.json(
+          { status: 409, code: "ADMIN_CANNOT_CHANGE_OWN_STATUS", message: "x" },
+          { status: 409 },
+        ),
+      ),
+    );
+    renderRoutes(routes, url(u));
+
+    await userEvent.click(await screen.findByRole("button", { name: "Desativar conta" }));
+    await userEvent.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "Somente desativar",
+      }),
+    );
+
+    expect(
+      await screen.findByText("Você não pode alterar a situação da sua própria conta."),
+    ).toBeInTheDocument();
   });
 
   it("desativa paciente com o texto da Q23", async () => {
@@ -186,7 +300,7 @@ describe("ativar e desativar", () => {
       ),
     ).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Desativar conta" }));
-    await waitFor(() => expect(changes).toEqual([{ status: "INACTIVE" }]));
+    await waitFor(() => expect(changes).toEqual([{ status: "INACTIVE", endRelationships: false }]));
   });
 
   it("ativa conta desativada depois de confirmar", async () => {
@@ -201,7 +315,7 @@ describe("ativar e desativar", () => {
     expect(within(dialog).getByText("Ativar a conta de Ana Souza?")).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Ativar conta" }));
 
-    await waitFor(() => expect(changes).toEqual([{ status: "ACTIVE" }]));
+    await waitFor(() => expect(changes).toEqual([{ status: "ACTIVE", endRelationships: false }]));
     expect(await screen.findByText("Ativa")).toBeInTheDocument();
   });
 

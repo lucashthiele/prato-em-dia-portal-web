@@ -65,13 +65,28 @@ describe("cadastro de nutricionista", () => {
   it("mostra o erro de e-mail em uso no campo", async () => {
     server.use(
       http.post("*/api/v1/admin/nutritionists", () =>
-        HttpResponse.json({ status: 409, code: "CONFLICT", message: "x" }, { status: 409 }),
+        HttpResponse.json(
+          { status: 409, code: "IDENTITY_ACCOUNT_ALREADY_EXISTS", message: "x" },
+          { status: 409 },
+        ),
       ),
     );
     renderRoutes(routes, "/admin/usuarios/novo");
     await fill("Ana Souza", "ana@exemplo.com");
     expect(await screen.findByText("Já existe uma conta com este e-mail.")).toBeInTheDocument();
     expect(screen.queryByText("Detalhe")).not.toBeInTheDocument();
+  });
+
+  it("outro 409 não vira erro de e-mail em uso", async () => {
+    server.use(
+      http.post("*/api/v1/admin/nutritionists", () =>
+        HttpResponse.json({ status: 409, code: "OUTRO", message: "x" }, { status: 409 }),
+      ),
+    );
+    renderRoutes(routes, "/admin/usuarios/novo");
+    await fill("Ana Souza", "ana@exemplo.com");
+    expect(await screen.findByText("Tente novamente em instantes.")).toBeInTheDocument();
+    expect(screen.queryByText("Já existe uma conta com este e-mail.")).not.toBeInTheDocument();
   });
 
   it("mostra erros por campo vindos do servidor", async () => {

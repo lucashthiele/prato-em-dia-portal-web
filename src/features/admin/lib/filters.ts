@@ -80,6 +80,7 @@ export const AUDIT_ACTION_FILTERS: { value: AuditAction; label: string }[] = [
   { value: "NUTRITIONIST_CREATED", label: "Nutricionista cadastrado" },
   { value: "ACCESS_EMAIL_RESENT", label: "E-mail de acesso reenviado" },
   { value: "USER_STATUS_CHANGED", label: "Conta ativada ou desativada" },
+  { value: "RELATIONSHIPS_ENDED", label: "Vínculos encerrados" },
 ];
 
 export interface AuditFilters {
