@@ -1,1 +1,4 @@
 export { PrescriptionPanel } from "./pages/PrescriptionPanel";
+export { useFoodNames, type FoodName } from "./api/foods";
+export { usePatientPrescriptions } from "./api/prescriptions";
+export { formatQuantity } from "./lib/labels";

@@ -12,14 +12,18 @@ export interface WeekSummaryProps {
 type Tone = "success" | "warm" | "neutral";
 
 // Rótulos e ícones iguais aos do StatusChip.
-const CELLS: { key: keyof WeekSummaryProps["counts"]; label: string; icon: IconName; tone: Tone }[] =
-  [
-    { key: "planned", label: "Previstas", icon: "file", tone: "neutral" },
-    { key: "logged", label: "Registradas", icon: "check", tone: "success" },
-    { key: "partial", label: "Parciais", icon: "clock", tone: "warm" },
-    { key: "none", label: "Sem registro", icon: "minus", tone: "neutral" },
-    { key: "substituted", label: "Com substituição", icon: "swap", tone: "warm" },
-  ];
+const CELLS: {
+  key: keyof WeekSummaryProps["counts"];
+  label: string;
+  icon: IconName;
+  tone: Tone;
+}[] = [
+  { key: "planned", label: "Previstas", icon: "file", tone: "neutral" },
+  { key: "logged", label: "Registradas", icon: "check", tone: "success" },
+  { key: "partial", label: "Parciais", icon: "clock", tone: "warm" },
+  { key: "none", label: "Sem registro", icon: "minus", tone: "neutral" },
+  { key: "substituted", label: "Com substituição", icon: "swap", tone: "warm" },
+];
 
 export function WeekSummary({ title, subtitle, counts }: WeekSummaryProps) {
   return (

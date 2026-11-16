@@ -31,6 +31,7 @@ export const routes = [
           // Rotas reservadas até os tickets de cadastro, editor de prescrição e Perfil.
           { path: "/pacientes/novo", element: <ComingSoon title="Adicionar paciente" /> },
           { path: "/pacientes/:patientId", element: <PatientPage /> },
+          { path: "/pacientes/:patientId/acompanhamento/:data", element: <PatientPage /> },
           {
             path: "/pacientes/:patientId/prescricao/nova",
             element: <ComingSoon title="Nova versão da prescrição" />,
