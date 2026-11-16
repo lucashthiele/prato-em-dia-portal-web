@@ -113,7 +113,7 @@ export interface paths {
         };
         /**
          * Consultar perfil atual
-         * @description Retorna os dados do perfil associado ao usuário autenticado.
+         * @description Retorna os dados do perfil associado ao usuário autenticado, com o e-mail da conta. Conta ADMIN não tem perfil: responde só id da conta, role ADMIN e e-mail, com os demais campos nulos (o PUT continua respondendo 403 PROFILE_NOT_AVAILABLE para ADMIN).
          */
         get: operations["get"];
         /**
@@ -1296,6 +1296,7 @@ export interface components {
             /** Format: uuid */
             userAccountId?: string;
             role?: string;
+            email?: string;
             fullName?: string;
             phone?: string;
             registrationNumber?: string;

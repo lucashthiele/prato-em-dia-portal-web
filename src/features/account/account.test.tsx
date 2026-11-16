@@ -44,8 +44,11 @@ function mockBackend({
     http.get("*/api/v1/me", () => {
       if (!state.loggedIn) return new HttpResponse(null, { status: 401 });
       if (!state.consented) return apiError(403, "CONSENT_REQUIRED");
+      // Conta ADMIN não tem perfil: o servidor só devolve a conta (papel e e-mail).
+      if (role === "ADMIN") return HttpResponse.json({ role, email: "admin@exemplo.com" });
       return HttpResponse.json({
         role,
+        email: "marina@exemplo.com",
         fullName: "Marina Souza",
         phone: "11999990000",
         registrationNumber: "CRN-3 12345",
@@ -389,6 +392,7 @@ describe("perfil do nutricionista", () => {
     expect(screen.getByLabelText("Telefone")).toHaveValue("11999990000");
     expect(screen.getByLabelText("Registro profissional")).toHaveValue("CRN-3 12345");
     expect(screen.getByLabelText("Bio")).toHaveValue("Nutrição esportiva.");
+    expect(screen.getByLabelText("E-mail")).toHaveValue("marina@exemplo.com");
     expect(screen.getByLabelText("E-mail")).toBeDisabled();
     expect(screen.getAllByText("Por enquanto, só você vê estas informações.")).toHaveLength(2);
     expect(screen.queryByText(/nascimento/i)).not.toBeInTheDocument();
@@ -454,12 +458,14 @@ describe("perfil do nutricionista", () => {
 });
 
 describe("perfil do admin", () => {
-  it("mostra nome, e-mail somente leitura, Alterar senha e Sair, sem os campos do nutricionista", async () => {
+  it("mostra só o e-mail somente leitura, Alterar senha e Sair, sem os campos do nutricionista", async () => {
     mockBackend({ role: "ADMIN", loggedIn: true });
     const router = renderApp("/admin/perfil");
 
-    expect(await screen.findByLabelText("Nome")).toHaveValue("Marina Souza");
+    expect(await screen.findByLabelText("E-mail")).toHaveValue("admin@exemplo.com");
     expect(screen.getByLabelText("E-mail")).toBeDisabled();
+    expect(screen.queryByLabelText("Nome")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Salvar perfil" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Telefone")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Bio")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Registro profissional")).not.toBeInTheDocument();

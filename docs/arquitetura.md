@@ -65,7 +65,6 @@ Os tipos vêm de `/v3/api-docs` e são versionados. Antes de planejar uma funcio
 
 - **Backend (LUC-64):** rota `prescription-summary` com nome do alimento e macros por item/refeição. Até lá, `features/prescriptions/api/foods.ts` busca o nome de cada alimento em `GET /foods/{id}` e a tela não mostra calorias nem macros por refeição (só as metas da versão).
 - **Acompanhamento:** a semana usa 7 chamadas de `daily-meal-categories`, 1 de `meal-executions` e 1 de `calendar-periods` por semana (Q20 das decisões do MVP); não há rota agregada.
-- **Perfil:** `GET /me` não devolve o e-mail, então o campo E-mail (só leitura) do perfil fica vazio até o servidor expor o dado.
 - **Termos:** o texto de `features/auth/lib/legal-texts.ts` é preliminar e precisa de revisão jurídica antes do lançamento.
 - **Backend:** o endpoint `POST /api/v1/identity/useraccounts` não deve ser usado pelo portal sem autorização administrativa no servidor (ver a referência de produto, seção 2.1).
 - **Design system:** mudanças em `design-system/` geram um ticket de acompanhamento no front-end. Não há sincronização automática.

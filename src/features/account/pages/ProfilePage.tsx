@@ -14,7 +14,7 @@ function fieldError(error: unknown, field: string): string | undefined {
 }
 
 interface ProfilePageProps {
-  /** Admin: só nome, e-mail (somente leitura), "Alterar senha" e "Sair". */
+  /** Admin: só o e-mail (somente leitura), "Alterar senha" e "Sair"; a conta não tem perfil. */
   variant?: "nutritionist" | "admin";
   changePasswordPath?: string;
 }
@@ -73,18 +73,20 @@ function ProfileForm({
       {update.isError ? (
         <Alert tone="danger">Não foi possível salvar agora. Tente de novo em instantes.</Alert>
       ) : null}
-      <TextField
-        label="Nome"
-        autoComplete="name"
-        value={values.fullName}
-        onChange={set("fullName")}
-        error={nameError ?? fieldError(update.error, "fullName")}
-      />
-      {/* O contrato de GET /me não traz o e-mail (lacuna registrada): o campo fica sem valor. */}
+      {/* Conta ADMIN não tem perfil no servidor: só o e-mail, sem nome para editar. */}
+      {isNutritionist ? (
+        <TextField
+          label="Nome"
+          autoComplete="name"
+          value={values.fullName}
+          onChange={set("fullName")}
+          error={nameError ?? fieldError(update.error, "fullName")}
+        />
+      ) : null}
       <TextField
         label="E-mail"
         type="email"
-        value=""
+        value={profile.email ?? ""}
         readOnly
         disabled
         hint="Não pode ser alterado."
@@ -121,9 +123,11 @@ function ProfileForm({
         </>
       ) : null}
       <div className={styles.actions}>
-        <Button type="submit" loading={update.isPending}>
-          Salvar perfil
-        </Button>
+        {isNutritionist ? (
+          <Button type="submit" loading={update.isPending}>
+            Salvar perfil
+          </Button>
+        ) : null}
         <Button variant="outline" onClick={() => void navigate(changePasswordPath)}>
           Alterar senha
         </Button>
