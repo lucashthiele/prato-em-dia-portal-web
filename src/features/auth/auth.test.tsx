@@ -148,23 +148,63 @@ describe("login", () => {
     renderApp("/login");
     await fillAndSubmit("nutri@exemplo.com", "errada");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("E-mail ou senha incorretos");
+    expect(await screen.findByRole("alert")).toHaveTextContent(/^E-mail ou senha incorretos\.$/);
   });
 
-  it("avisa quando há tentativas demais", async () => {
+  it("avisa quando a conta está desativada", async () => {
     mockBackend();
     server.use(
       http.post("*/api/v1/auth/login", () =>
         HttpResponse.json(
-          { status: 429, code: "LOGIN_RATE_LIMITED", message: "Muitas tentativas.", errors: [] },
-          { status: 429 },
+          { status: 403, code: "AUTH_ACCOUNT_INACTIVE", message: "Conta inativa.", errors: [] },
+          { status: 403 },
         ),
       ),
     );
     renderApp("/login");
     await fillAndSubmit("nutri@exemplo.com", "segredo");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Muitas tentativas");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Sua conta está desativada. Fale com a administração do Prato em Dia.",
+    );
+  });
+
+  it.each([
+    ["90", "Muitas tentativas. Tente de novo em 2 minutos."],
+    ["60", "Muitas tentativas. Tente de novo em 1 minuto."],
+    ["301", "Muitas tentativas. Tente de novo em 6 minutos."],
+  ])("avisa quando há tentativas demais (Retry-After %s s)", async (retryAfter, message) => {
+    mockBackend();
+    server.use(
+      http.post("*/api/v1/auth/login", () =>
+        HttpResponse.json(
+          { status: 429, code: "LOGIN_RATE_LIMITED", message: "Muitas tentativas.", errors: [] },
+          { status: 429, headers: { "Retry-After": retryAfter } },
+        ),
+      ),
+    );
+    renderApp("/login");
+    await fillAndSubmit("nutri@exemplo.com", "segredo");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(message);
+  });
+
+  it("avisa quando o servidor responde 5xx", async () => {
+    mockBackend();
+    server.use(
+      http.post("*/api/v1/auth/login", () =>
+        HttpResponse.json(
+          { status: 500, code: "INTERNAL_ERROR", message: "Erro.", errors: [] },
+          { status: 500 },
+        ),
+      ),
+    );
+    renderApp("/login");
+    await fillAndSubmit("nutri@exemplo.com", "segredo");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível entrar agora. Tente de novo em instantes.",
+    );
   });
 
   it("mostra o erro de cada campo quando a validação falha", async () => {
@@ -197,7 +237,7 @@ describe("login", () => {
     await fillAndSubmit("nutri@exemplo.com", "segredo");
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Não foi possível falar com o servidor",
+      "Não foi possível entrar agora. Tente de novo em instantes.",
     );
   });
 });

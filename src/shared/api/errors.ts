@@ -15,13 +15,22 @@ export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
   readonly fieldErrors: FieldError[];
+  /** Segundos pedidos pelo header `Retry-After` (429), quando presente e numérico. */
+  readonly retryAfterSeconds?: number;
 
-  constructor(status: number, code: string, message: string, fieldErrors: FieldError[] = []) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    fieldErrors: FieldError[] = [],
+    retryAfterSeconds?: number,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
     this.fieldErrors = fieldErrors;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 
   /** Falha antes de haver resposta (rede fora, proxy sem backend). */
@@ -39,10 +48,12 @@ export async function toApiError(response: Response): Promise<ApiError> {
   } catch {
     // Corpo vazio ou não JSON (por exemplo, erro do proxy): usa só o status.
   }
+  const retryAfter = Number(response.headers.get("Retry-After"));
   return new ApiError(
     response.status,
     body.code ?? "UNKNOWN_ERROR",
     body.message ?? response.statusText,
     body.errors ?? [],
+    Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined,
   );
 }
