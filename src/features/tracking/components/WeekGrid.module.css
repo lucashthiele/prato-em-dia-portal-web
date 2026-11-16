@@ -1,0 +1,71 @@
+.wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: var(--border-card) solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--text-body);
+}
+
+.table thead th {
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-container);
+  color: var(--ink-muted);
+  font: var(--text-overline);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td,
+.day {
+  padding: var(--space-3) var(--space-4);
+  border-top: var(--border-hairline) solid var(--outline-variant);
+  vertical-align: middle;
+  text-align: left;
+}
+
+.day {
+  display: table-cell;
+  font: var(--text-label);
+  white-space: nowrap;
+}
+
+.link {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.marker {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.dash,
+.upcoming {
+  color: var(--ink-muted);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

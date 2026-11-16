@@ -11,3 +11,4 @@ export { StatusChip, type Status, type StatusChipProps } from "./StatusChip";
 export { Tabs, type TabsProps } from "./Tabs";
 export { TextField, type TextFieldProps } from "./TextField";
 export { VersionHistory, type Version, type VersionHistoryProps } from "./VersionHistory";
+export { WeekSummary, type WeekSummaryProps } from "./WeekSummary";

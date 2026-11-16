@@ -13,7 +13,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export type Status =
-  | 'done' | 'skipped' | 'substituted' | 'none'
+  | 'logged' | 'partial' | 'none' | 'substituted'
   | 'draft' | 'published' | 'archived'
   | 'active' | 'ended'
   | 'pending' | 'sent' | 'failed';
@@ -43,7 +43,7 @@ export interface PatientHeaderProps {
 
 export interface MetricTileProps { label: string; value: ReactNode; unit?: string; hint?: string; }
 
-export interface MealRow { time: string; meal: string; items?: string; kcal: number | string; status?: 'done' | 'skipped' | 'substituted' | 'none'; }
+export interface MealRow { time: string; meal: string; items?: string; kcal: number | string; status?: 'logged' | 'partial' | 'none'; substituted?: boolean; }
 export interface MealTableProps { rows: MealRow[]; caption?: string; }
 
 export interface Version { number: number; summary: string; date: string; author?: string; status: 'draft' | 'published' | 'archived'; current?: boolean; }
@@ -52,7 +52,7 @@ export interface VersionHistoryProps { versions: Version[]; }
 export type PlanningPolicy = 'RESTRICTED' | 'SUBSTITUTIONS_ONLY' | 'FREE';
 export interface PolicyPickerProps { value: PlanningPolicy; onChange?: (v: PlanningPolicy) => void; name?: string; legend?: string; }
 
-export interface WeekSummaryProps { title: string; subtitle?: string; counts: { planned: number; done: number; substituted: number; skipped: number; none: number }; }
+export interface WeekSummaryProps { title: string; subtitle?: string; counts: { planned: number; logged: number; partial: number; none: number; substituted: number }; }
 
 export interface AlertProps { tone?: 'info' | 'success' | 'warm' | 'danger'; title?: string; action?: ReactNode; children: ReactNode; }
 

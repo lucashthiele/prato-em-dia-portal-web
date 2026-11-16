@@ -1,7 +1,8 @@
-Resumo de uma semana registrada no app: refeições planejadas e o último evento de cada uma, em contagens.
+Resumo de uma semana registrada no app, em contagens de categorias de refeição (café da manhã, almoço, lanche e jantar de cada dia).
 
-**O consumidor fornece:** `title` (ex.: “Semana 8 · 07/04 a 13/04”), `subtitle` (prescrição de origem), `counts` (`{planned, done, substituted, skipped, none}`) vindos do resumo da API — sem cálculo paralelo no portal.
+**O consumidor fornece:** `title` (ex.: “Semana de 07/04 a 13/04”), `subtitle` opcional e `counts` (`{planned, logged, partial, none, substituted}`).
 
-- Mostre contagens, não percentual. “Sem registro” fica separado de “Não realizada”.
+- Cards, nesta ordem: **Previstas**, **Registradas**, **Parciais**, **Sem registro** e **Com substituição**. Os rótulos seguem o `StatusChip`.
+- **Dias futuros não entram** nas contagens. **Sem registro** conta só categorias previstas; “—” (sem refeição planejada) nunca é contado.
+- Mostre contagens, não percentual: não há denominador acordado no MVP.
 - Semana sem planejamento: use `EmptyState` em vez de um resumo zerado.
-- Os títulos dos cards são os mesmos rótulos do `StatusChip`: “Realizada”, “Alterada”, “Não realizada”, “Sem registro”. O tooltip de “Alterada” explica: “Realizada com substituição”.

@@ -1,0 +1,65 @@
+.week {
+  padding: var(--space-5);
+  background: var(--surface);
+  border: var(--border-card) solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+}
+
+.title {
+  font: var(--text-title);
+}
+
+.sub {
+  color: var(--ink-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-low);
+}
+
+.label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+  font: var(--text-label);
+  color: var(--ink);
+}
+
+.label svg {
+  margin-top: 2px;
+}
+
+.success .label svg {
+  color: var(--primary);
+}
+
+.warm .label svg {
+  color: var(--secondary);
+}
+
+.neutral .label svg {
+  color: var(--ink-muted);
+}
+
+.n {
+  font: var(--text-metric);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ink);
+}

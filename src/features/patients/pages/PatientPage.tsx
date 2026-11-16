@@ -11,6 +11,7 @@ import {
   Tabs,
 } from "../../../shared/ui";
 import { PrescriptionPanel } from "../../prescriptions";
+import { DayPage, WeekPanel } from "../../tracking";
 import { useEndRelationship, usePatient } from "../api/patient";
 import { useResendAccess } from "../api/patients";
 import { AccessEmailAlert } from "../components/AccessEmailAlert";
@@ -28,12 +29,12 @@ type Dialog = "resend" | "end" | null;
 const ACCESS_EMAIL_POLL_WINDOW_MS = 30_000;
 
 export function PatientPage() {
-  const { patientId = "" } = useParams();
+  const { patientId = "", data: day } = useParams();
   // `key` zera o estado local ao trocar de paciente: nunca mostra dados do anterior.
-  return <PatientScreen key={patientId} patientId={patientId} />;
+  return <PatientScreen key={patientId} patientId={patientId} day={day} />;
 }
 
-function PatientScreen({ patientId }: { patientId: string }) {
+function PatientScreen({ patientId, day }: { patientId: string; day?: string }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const location = useLocation();
@@ -55,7 +56,12 @@ function PatientScreen({ patientId }: { patientId: string }) {
     return () => clearTimeout(timer);
   }, [pollWindow.open, pollWindow.run]);
 
-  const tab = TABS.some((t) => t.id === params.get("aba")) ? params.get("aba")! : "prescricao";
+  // O detalhe do dia (`/acompanhamento/:data`) é a aba Acompanhamento em outra rota.
+  const tab = day
+    ? "acompanhamento"
+    : TABS.some((t) => t.id === params.get("aba"))
+      ? params.get("aba")!
+      : "prescricao";
 
   if (patient.isPending) {
     return (
@@ -203,7 +209,11 @@ function PatientScreen({ patientId }: { patientId: string }) {
         label="Paciente"
         items={TABS}
         value={tab}
-        onChange={(id) => setParams(id === "prescricao" ? {} : { aba: id }, { replace: true })}
+        onChange={(id) =>
+          day
+            ? navigate(`/pacientes/${patientId}${id === "prescricao" ? "" : `?aba=${id}`}`)
+            : setParams(id === "prescricao" ? {} : { aba: id }, { replace: true })
+        }
       />
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
@@ -215,10 +225,14 @@ function PatientScreen({ patientId }: { patientId: string }) {
           ) : (
             <PrescriptionPanel patientId={patientId} />
           )
-        ) : (
-          <EmptyState title="Acompanhamento da semana" icon="clock">
-            A semana registrada no app ainda não está disponível no portal.
+        ) : ended ? (
+          <EmptyState title="Vínculo encerrado" icon="history">
+            Você não acessa mais o acompanhamento deste paciente.
           </EmptyState>
+        ) : day ? (
+          <DayPage patientId={patientId} date={day} />
+        ) : (
+          <WeekPanel patientId={patientId} />
         )}
       </div>
 

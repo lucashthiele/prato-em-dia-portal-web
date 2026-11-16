@@ -46,10 +46,10 @@
   }
 
   var STATUS = {
-    done: ['Realizada', 'check', 'success'],
-    skipped: ['Não realizada', 'x', 'danger'],
-    substituted: ['Alterada', 'swap', 'warm', 'Realizada com substituição'],
-    none: ['Sem registro', 'minus', 'neutral'],
+    logged: ['Registrada', 'check', 'success'],
+    partial: ['Parcial', 'clock', 'warm', 'Há itens planejados sem registro'],
+    none: ['Sem registro', 'minus', 'neutral', 'Ausência de registro não é descumprimento'],
+    substituted: ['Com substituição', 'swap', 'warm', 'O paciente registrou uma substituição autorizada'],
     draft: ['Rascunho', 'file', 'warm'],
     published: ['Publicada', 'check', 'success'],
     archived: ['Arquivada', 'history', 'neutral'],
@@ -141,7 +141,7 @@
             h('td', { className: 'is-num pd-muted' }, r.time),
             h('td', null, h('div', { className: 'pd-table__meal' }, r.meal), r.items ? h('div', { className: 'pd-table__items' }, r.items) : null),
             h('td', { className: 'is-num' }, r.kcal),
-            showStatus ? h('td', null, r.status ? h(StatusChip, { status: r.status }) : null) : null);
+            showStatus ? h('td', null, r.status ? h('span', { className: 'pd-table__status' }, h(StatusChip, { status: r.status }), r.substituted ? h(StatusChip, { status: 'substituted' }) : null) : null) : null);
         }))));
   }
 
@@ -177,16 +177,14 @@
 
   function WeekSummary(p) {
     var c = p.counts;
-    var cells = [['done', c.done], ['substituted', c.substituted], ['skipped', c.skipped], ['none', c.none]];
+    var cells = [['Previstas', 'file', 'neutral', c.planned], ['Registradas', 'check', 'success', c.logged], ['Parciais', 'clock', 'warm', c.partial], ['Sem registro', 'minus', 'neutral', c.none], ['Com substituição', 'swap', 'warm', c.substituted]];
     return h('section', { className: 'pd-week' },
       h('div', { className: 'pd-week__head' },
-        h('div', null, h('div', { className: 'pd-week__title' }, p.title), p.subtitle ? h('div', { className: 'pd-week__sub' }, p.subtitle) : null),
-        h('div', { className: 'pd-week__planned' }, h('span', { className: 'pd-week__n' }, c.planned), ' refeições planejadas')),
+        h('div', null, h('div', { className: 'pd-week__title' }, p.title), p.subtitle ? h('div', { className: 'pd-week__sub' }, p.subtitle) : null)),
       h('ul', { className: 'pd-week__grid' }, cells.map(function (x) {
-        var s = STATUS[x[0]];
-        return h('li', { key: x[0], className: cx('pd-week__cell', 'pd-week__cell--' + s[2]), title: s[3] },
-          h('span', { className: 'pd-week__label' }, h(Icon, { name: s[1], size: 16 }), h('span', null, s[0])),
-          h('span', { className: 'pd-week__n' }, x[1]));
+        return h('li', { key: x[0], className: cx('pd-week__cell', 'pd-week__cell--' + x[2]) },
+          h('span', { className: 'pd-week__label' }, h(Icon, { name: x[1], size: 16 }), h('span', null, x[0])),
+          h('span', { className: 'pd-week__n' }, x[3]));
       })));
   }
 

@@ -102,6 +102,14 @@ function mockApi({
     http.get("*/api/v1/foods/:id", ({ params }) =>
       HttpResponse.json({ id: params.id, name: params.id === "f1" ? "Ovo cozido" : "Queijo" }),
     ),
+    // A aba Acompanhamento pede a semana; aqui basta uma semana sem plano.
+    http.get("*/api/v1/nutritionists/me/patients/:id/daily-meal-categories", () =>
+      HttpResponse.json({ categories: [] }),
+    ),
+    http.get("*/api/v1/nutritionists/me/patients/:id/meal-executions", () => HttpResponse.json([])),
+    http.get("*/api/v1/nutritionists/me/patients/:id/calendar-periods", () =>
+      HttpResponse.json({}),
+    ),
     http.post("*/api/v1/nutritionists/me/patients/:id/access-email", () => {
       calls.push("resend");
       return new HttpResponse(null, { status: 202 });
@@ -192,14 +200,14 @@ describe("Tela de paciente", () => {
     prescription.focus();
     await userEvent.keyboard("{ArrowRight}");
     expect(router.state.location.search).toBe("?aba=acompanhamento");
-    expect(screen.getByText("Acompanhamento da semana")).toBeVisible();
+    expect(await screen.findByText("Sem plano nesta semana")).toBeVisible();
     expect(within(tabs).getByRole("tab", { name: "Acompanhamento" })).toHaveFocus();
   });
 
   it("abre a aba pela URL", async () => {
     mockApi();
     renderPage(`/pacientes/${PATIENT_ID}?aba=acompanhamento`);
-    expect(await screen.findByText("Acompanhamento da semana")).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Semana anterior" })).toBeVisible();
   });
 
   it("só oferece reenviar acesso quando o envio está pendente ou falhou", async () => {

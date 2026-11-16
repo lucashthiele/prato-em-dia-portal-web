@@ -42,6 +42,7 @@ export const routes = [
               // Rota reservada até o editor de prescrição.
               { path: "/pacientes/novo", element: <NewPatientPage /> },
               { path: "/pacientes/:patientId", element: <PatientPage /> },
+              { path: "/pacientes/:patientId/acompanhamento/:data", element: <PatientPage /> },
               {
                 path: "/pacientes/:patientId/prescricao/nova",
                 element: <ComingSoon title="Nova versão da prescrição" />,

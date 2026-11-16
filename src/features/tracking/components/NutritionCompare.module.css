@@ -1,0 +1,50 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.title {
+  margin: 0;
+  font: var(--text-title);
+}
+
+.wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: var(--border-card) solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--text-body);
+}
+
+.table thead th {
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-container);
+  color: var(--ink-muted);
+  font: var(--text-overline);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td,
+.table tbody th {
+  padding: var(--space-3) var(--space-4);
+  border-top: var(--border-hairline) solid var(--outline-variant);
+  text-align: left;
+  font-weight: normal;
+}
+
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  margin: 0;
+  color: var(--ink-muted);
+}
