@@ -2,6 +2,6 @@ Navegação lateral fixa do portal, com a marca do Prato em Dia e a conta do pro
 
 **O consumidor fornece:** `logoSrc` (o asset `prato_em_dia_logo.png`), `items` (`{id, label, icon, href?}`), `value` (área atual), `onChange`, `user` (`{name, registry?}`) e `onLogout`.
 
-- Itens do MVP: Início (`home`), Pacientes (`users`), Perfil e conta (`user`). Administração só aparece para `ADMIN`, em área separada.
+- Itens do MVP: Início (`home`), Pacientes (`users`), Perfil e conta (`user`). A área Administração é separada e só aparece para `ADMIN`, com itens próprios: Usuários (`users`), Auditoria (`history`) e Perfil e conta (`user`); ver o README do design system.
 - Não adicione “Prescrições” como item global — a prescrição vive dentro do paciente.
 - Abaixo de 900px vira uma barra superior; a conta passa para o menu de perfil.

@@ -61,6 +61,10 @@ export interface EmptyStateProps { title: string; icon?: IconName; action?: Reac
 export interface ConfirmDialogProps {
   title: string; children: ReactNode; confirmLabel: string; cancelLabel?: string;
   tone?: 'primary' | 'danger'; loading?: boolean; open?: boolean; inline?: boolean;
+  /** Ação secundária (três botões: cancelar, secundária, confirmar). Exige `onSecondary`. */
+  secondaryLabel?: string; onSecondary?: () => void;
+  /** Texto de apoio da ação de confirmar, acima dos botões. */
+  confirmHint?: string;
   onConfirm: () => void; onCancel: () => void;
 }
 
