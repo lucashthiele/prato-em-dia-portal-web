@@ -157,7 +157,7 @@
   }
 
   var POLICIES = [
-    { id: 'RESTRICTED', title: 'Seguir o plano', body: 'O paciente registra exatamente o que foi prescrito. Recomendado para começar.' },
+    { id: 'RESTRICTED', title: 'Seguir o plano', body: 'O paciente registra exatamente o que foi prescrito.' },
     { id: 'SUBSTITUTIONS_ONLY', title: 'Permitir substituições', body: 'O paciente pode trocar um alimento apenas pelas opções que você autorizar em cada item.' },
     { id: 'FREE', title: 'Montagem livre', body: 'O paciente monta as refeições da semana a partir da prescrição, adicionando ou removendo itens.' }
   ];
@@ -170,7 +170,7 @@
         return h('label', { key: o.id, className: cx('pd-policy__opt', sel && 'is-selected') },
           h('input', { type: 'radio', name: name, value: o.id, checked: sel, onChange: function () { p.onChange && p.onChange(o.id); } }),
           h('span', { className: 'pd-policy__dot', 'aria-hidden': true }),
-          h('span', null, h('span', { className: 'pd-policy__title' }, o.title, o.id === 'RESTRICTED' ? h('span', { className: 'pd-policy__tag' }, 'Sugerido') : null),
+          h('span', null, h('span', { className: 'pd-policy__title' }, o.title, o.id === 'SUBSTITUTIONS_ONLY' ? h('span', { className: 'pd-policy__tag' }, 'Sugerido') : null),
             h('span', { className: 'pd-policy__body' }, o.body)));
       }));
   }
@@ -221,7 +221,7 @@
 
   function SaveStatus(p) {
     var st = p.state || 'saved';
-    var map = { saving: [null, 'Salvando…'], saved: ['check', 'Rascunho salvo'], error: ['alert', 'Não foi possível salvar'] };
+    var map = { unsaved: ['clock', 'Alterações não salvas'], saving: [null, 'Salvando…'], saved: ['check', 'Rascunho salvo'], error: ['alert', 'Não foi possível salvar'] };
     return h('span', { className: cx('pd-save', 'pd-save--' + st), role: 'status', 'aria-live': 'polite' },
       st === 'saving' ? h('span', { className: 'pd-spinner pd-spinner--sm', 'aria-hidden': true }) : h(Icon, { name: map[st][0], size: 16 }),
       p.label || map[st][1]);

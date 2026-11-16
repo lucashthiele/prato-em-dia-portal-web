@@ -64,4 +64,4 @@ export interface ConfirmDialogProps {
   onConfirm: () => void; onCancel: () => void;
 }
 
-export interface SaveStatusProps { state: 'saving' | 'saved' | 'error'; label?: string; }
+export interface SaveStatusProps { state: 'unsaved' | 'saving' | 'saved' | 'error'; label?: string; }
