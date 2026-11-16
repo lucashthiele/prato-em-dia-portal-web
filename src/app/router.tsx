@@ -8,7 +8,19 @@ import {
   RequireRole,
   RequireSession,
 } from "../features/auth";
-import { ChangePasswordPage, ProfilePage, SetPasswordPage } from "../features/account";
+import {
+  AdminProfilePage,
+  ChangePasswordPage,
+  ProfilePage,
+  SetPasswordPage,
+} from "../features/account";
+import {
+  AdminShell,
+  AuditPage,
+  CreateNutritionistPage,
+  UserDetailPage,
+  UsersListPage,
+} from "../features/admin";
 import { HomePage } from "../features/home";
 import { NewPatientPage, PatientPage, PatientsListPage } from "../features/patients";
 import { ComingSoon } from "./ComingSoon";
@@ -54,9 +66,28 @@ export const routes = [
         ],
       },
       {
-        // Área do admin. Placeholder: o worker do admin troca pelo Shell e pelas telas dele.
+        // Área do admin (Q3, Q24), com Shell e SideNav próprios.
         element: <RequireRole allow="ADMIN" />,
-        children: [{ path: "/admin/*", element: <ComingSoon title="Administração" /> }],
+        children: [
+          {
+            element: <AdminShell />,
+            children: [
+              { path: "/admin", element: <Navigate to="/admin/usuarios" replace /> },
+              { path: "/admin/usuarios", element: <UsersListPage /> },
+              { path: "/admin/usuarios/novo", element: <CreateNutritionistPage /> },
+              { path: "/admin/usuarios/:id", element: <UserDetailPage /> },
+              { path: "/admin/auditoria", element: <AuditPage /> },
+              {
+                path: "/admin/perfil",
+                element: <AdminProfilePage changePasswordPath="/admin/perfil/senha" />,
+              },
+              {
+                path: "/admin/perfil/senha",
+                element: <ChangePasswordPage backTo="/admin/perfil" />,
+              },
+            ],
+          },
+        ],
       },
     ],
   },

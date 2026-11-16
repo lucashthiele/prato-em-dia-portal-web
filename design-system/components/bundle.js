@@ -212,9 +212,11 @@
       h('div', { className: 'pd-dialog', role: 'alertdialog', 'aria-modal': true, 'aria-labelledby': 'pd-dialog-title' },
         h('h2', { id: 'pd-dialog-title', className: 'pd-dialog__title' }, p.title),
         h('div', { className: 'pd-dialog__body' }, p.children),
+        p.confirmHint ? h('p', { id: 'pd-dialog-hint', className: 'pd-dialog__hint' }, p.confirmHint) : null,
         h('div', { className: 'pd-dialog__actions' },
           h(Button, { variant: 'ghost', onClick: p.onCancel }, p.cancelLabel || 'Cancelar'),
-          h(Button, { variant: tone === 'danger' ? 'danger' : 'primary', onClick: p.onConfirm, loading: p.loading }, p.confirmLabel))));
+          p.secondaryLabel ? h(Button, { variant: 'outline', onClick: p.onSecondary, loading: p.loading }, p.secondaryLabel) : null,
+          h(Button, { variant: tone === 'danger' ? 'danger' : 'primary', onClick: p.onConfirm, loading: p.loading, 'aria-describedby': p.confirmHint ? 'pd-dialog-hint' : undefined }, p.confirmLabel))));
   }
 
   function SaveStatus(p) {
