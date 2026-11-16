@@ -127,7 +127,7 @@ function renderPage(url = `/pacientes/${PATIENT_ID}`) {
     [
       { path: "/pacientes", element: <p>Lista de pacientes</p> },
       { path: "/pacientes/:patientId", element: <PatientPage /> },
-      { path: "/pacientes/:patientId/prescricao/nova", element: <p>Nova versão em breve</p> },
+      { path: "/pacientes/:patientId/prescricao/:versionId", element: <p>Editor do rascunho</p> },
     ],
     { initialEntries: [url] },
   );
@@ -279,11 +279,12 @@ describe("Tela de paciente", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Ana Ribeiro" })).toBeVisible();
   });
 
-  it("leva Nova versão para a página em desenvolvimento", async () => {
+  it("leva Continuar rascunho para o editor da versão em rascunho", async () => {
     mockApi();
-    renderPage();
-    await userEvent.click(await screen.findByRole("button", { name: "Nova versão" }));
-    await waitFor(() => expect(screen.getByText("Nova versão em breve")).toBeVisible());
+    const router = renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Continuar rascunho" }));
+    await waitFor(() => expect(screen.getByText("Editor do rascunho")).toBeVisible());
+    expect(router.state.location.pathname).toBe(`/pacientes/${PATIENT_ID}/prescricao/v3`);
   });
 
   it("não oferece ações com o vínculo encerrado", async () => {

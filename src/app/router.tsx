@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter, Navigate, useParams } from "react-router";
 import {
   ConsentPage,
   LoginPage,
@@ -22,9 +22,19 @@ import {
   UsersListPage,
 } from "../features/admin";
 import { HomePage } from "../features/home";
-import { NewPatientPage, PatientPage, PatientsListPage } from "../features/patients";
-import { ComingSoon } from "./ComingSoon";
+import {
+  NewPatientPage,
+  PatientContextHeader,
+  PatientPage,
+  PatientsListPage,
+} from "../features/patients";
+import { PrescriptionEditorPage } from "../features/prescriptions";
 import { Shell } from "./Shell";
+
+function PrescriptionEditorRoute() {
+  const { patientId = "" } = useParams();
+  return <PrescriptionEditorPage header={<PatientContextHeader patientId={patientId} />} />;
+}
 
 export const routes = [
   {
@@ -51,13 +61,14 @@ export const routes = [
             children: [
               { path: "/", element: <HomePage /> },
               { path: "/pacientes", element: <PatientsListPage /> },
-              // Rota reservada até o editor de prescrição.
               { path: "/pacientes/novo", element: <NewPatientPage /> },
               { path: "/pacientes/:patientId", element: <PatientPage /> },
               { path: "/pacientes/:patientId/acompanhamento/:data", element: <PatientPage /> },
+              // O editor sempre edita um rascunho existente (Q9): a criação da prescrição e da
+              // versão acontece antes, na aba Prescrição.
               {
-                path: "/pacientes/:patientId/prescricao/nova",
-                element: <ComingSoon title="Nova versão da prescrição" />,
+                path: "/pacientes/:patientId/prescricao/:versionId",
+                element: <PrescriptionEditorRoute />,
               },
               { path: "/perfil", element: <ProfilePage /> },
               { path: "/perfil/senha", element: <ChangePasswordPage /> },
