@@ -42,7 +42,8 @@ async function probe(): Promise<{ status: SessionStatus; role?: Role }> {
     const { data } = await client.GET("/api/v1/me");
     return { status: "authenticated", role: toRole(data?.role) };
   } catch (error) {
-    if (error instanceof ApiError && error.code === "CONSENT_REQUIRED") return { status: "consent" };
+    if (error instanceof ApiError && error.code === "CONSENT_REQUIRED")
+      return { status: "consent" };
     // O servidor responde isso em qualquer rota; vale também depois de recarregar a página.
     if (error instanceof ApiError && error.code === "PASSWORD_CHANGE_REQUIRED") {
       return { status: "password" };

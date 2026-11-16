@@ -17,7 +17,8 @@ export function validatePassword(
 ): PasswordErrors {
   const errors: PasswordErrors = {};
   // `null`: primeiro acesso, sem senha atual (S-01).
-  if (currentLabel !== null && !values.currentPassword) errors.currentPassword = `Informe ${currentLabel}.`;
+  if (currentLabel !== null && !values.currentPassword)
+    errors.currentPassword = `Informe ${currentLabel}.`;
   if (values.newPassword.length < PASSWORD_MIN || values.newPassword.length > PASSWORD_MAX) {
     errors.newPassword = PASSWORD_HELP;
   }
