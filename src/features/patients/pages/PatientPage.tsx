@@ -10,7 +10,7 @@ import {
   PatientHeader,
   Tabs,
 } from "../../../shared/ui";
-import { PrescriptionPanel } from "../../prescriptions";
+import { PrescriptionPanel, useNewVersion } from "../../prescriptions";
 import { DayPage, WeekPanel } from "../../tracking";
 import { useEndRelationship, usePatient } from "../api/patient";
 import { useResendAccess } from "../api/patients";
@@ -44,6 +44,7 @@ function PatientScreen({ patientId, day }: { patientId: string; day?: string }) 
   const patient = usePatient(patientId, { poll: pollWindow.open });
   const resend = useResendAccess();
   const end = useEndRelationship();
+  const newVersion = useNewVersion(patientId);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [resent, setResent] = useState(false);
 
@@ -141,6 +142,16 @@ function PatientScreen({ patientId, day }: { patientId: string; day?: string }) 
         actions={
           ended ? null : (
             <>
+              {newVersion.available ? (
+                <Button
+                  variant="outline"
+                  icon="plus"
+                  loading={newVersion.pending}
+                  onClick={newVersion.start}
+                >
+                  Nova versão
+                </Button>
+              ) : null}
               {canResend ? (
                 <Button
                   variant="outline"
@@ -192,6 +203,22 @@ function PatientScreen({ patientId, day }: { patientId: string; day?: string }) 
       ) : resend.isError ? (
         <Alert tone="danger" title="Não foi possível reenviar o acesso">
           Tente novamente em instantes.
+        </Alert>
+      ) : newVersion.error ? (
+        <Alert
+          tone="danger"
+          title="Não foi possível criar a nova versão"
+          action={
+            newVersion.error instanceof ApiError && newVersion.error.status === 409 ? (
+              <Button size="sm" variant="outline" onClick={newVersion.reload}>
+                Recarregar
+              </Button>
+            ) : undefined
+          }
+        >
+          {newVersion.error instanceof ApiError && newVersion.error.status === 409
+            ? "Esta prescrição mudou em outra aba. Recarregue antes de criar a nova versão."
+            : "Tente novamente em instantes."}
         </Alert>
       ) : end.isError ? (
         <Alert tone="danger" title="Não foi possível encerrar o vínculo">

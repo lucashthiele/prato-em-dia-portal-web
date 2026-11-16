@@ -4,7 +4,12 @@ import { Link, useNavigate, useParams } from "react-router";
 import { ApiError } from "../../../shared/api";
 import { Alert, Button, ConfirmDialog, EmptyState, SaveStatus } from "../../../shared/ui";
 import { fetchFood, fetchPortions } from "../api/catalog";
-import { useSaveVersion, usePatientCalendar, usePublishVersion } from "../api/mutations";
+import {
+  useDiscardVersion,
+  useSaveVersion,
+  usePatientCalendar,
+  usePublishVersion,
+} from "../api/mutations";
 import { usePatientPrescriptions, type PrescriptionVersion } from "../api/prescriptions";
 import { MealEditor } from "../components/MealEditor";
 import { TargetsEditor } from "../components/TargetsEditor";
@@ -18,6 +23,7 @@ import {
   type FoodRef,
   type PortionRef,
 } from "../lib/editor-model";
+import { discardText } from "../lib/discard-text";
 import { planningModeLabel } from "../lib/labels";
 import { nextPlanStart, publishText } from "../lib/publish-text";
 import { useUnsavedGuard } from "../lib/useUnsavedGuard";
@@ -171,6 +177,7 @@ function EditorLoader({
       patientId={patientId}
       versionId={versionId}
       versionNumber={version.number}
+      versions={prescription.versions ?? []}
       mode={prescription.planningMode}
       initial={initial.draft}
       header={header}
@@ -184,6 +191,7 @@ function EditorForm({
   patientId,
   versionId,
   versionNumber,
+  versions,
   mode,
   initial,
   header,
@@ -193,6 +201,7 @@ function EditorForm({
   patientId: string;
   versionId: string;
   versionNumber: number | undefined;
+  versions: PrescriptionVersion[];
   mode: string | undefined;
   initial: Draft;
   header?: ReactNode;
@@ -206,12 +215,16 @@ function EditorForm({
   const [conflict, setConflict] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [confirmPublish, setConfirmPublish] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  // Descartar já é a decisão de perder as alterações: a saída não passa pelo aviso do Q8.
+  const discarded = useRef(false);
+  const discard = useDiscardVersion(patientId);
   const save = useSaveVersion(patientId, versionId);
   const publish = usePublishVersion(patientId);
   const calendar = usePatientCalendar(patientId, confirmPublish);
 
   const dirty = JSON.stringify(draft) !== saved;
-  const blocker = useUnsavedGuard(dirty);
+  const blocker = useUnsavedGuard(dirty, discarded);
 
   const problems = validate(draft);
   const withoutItems = includedMealsWithoutItems(draft);
@@ -249,6 +262,17 @@ function EditorForm({
     });
   }
 
+  function onDiscard() {
+    discard.mutate(versionId, {
+      onSuccess: () => {
+        discarded.current = true;
+        navigate(`/pacientes/${patientId}`);
+      },
+      onSettled: () => setConfirmDiscard(false),
+    });
+  }
+
+  const discardConflict = discard.error instanceof ApiError && discard.error.status === 409;
   const publishConflict = publish.error instanceof ApiError && publish.error.status === 409;
   const status = save.isPending
     ? "saving"
@@ -267,6 +291,7 @@ function EditorForm({
       onClick={() => {
         setConflict(false);
         publish.reset();
+        discard.reset();
         void onReload();
       }}
     >
@@ -285,6 +310,15 @@ function EditorForm({
           {dirty || save.isPending || savedAt || save.isError ? (
             <SaveStatus state={status} label={statusLabel} />
           ) : null}
+          <Button
+            variant="outline"
+            onClick={() => {
+              discard.reset();
+              setConfirmDiscard(true);
+            }}
+          >
+            Descartar rascunho
+          </Button>
           <Button variant="outline" loading={save.isPending} onClick={onSave}>
             Salvar rascunho
           </Button>
@@ -331,6 +365,16 @@ function EditorForm({
             : "Tente novamente em instantes."}
         </Alert>
       ) : null}
+      {discardConflict ? (
+        <Alert tone="danger" title="Não foi possível descartar o rascunho" action={reloadAction}>
+          Este rascunho mudou em outra aba e não pode mais ser descartado. Recarregue para ver a
+          versão atual.
+        </Alert>
+      ) : discard.isError ? (
+        <Alert tone="danger" title="Não foi possível descartar o rascunho">
+          Tente novamente em instantes.
+        </Alert>
+      ) : null}
       {mode !== "SUBSTITUTIONS_ONLY" && hasSubstitutions(draft) ? (
         <Alert tone="warm">
           Com o modo {planningModeLabel(mode)?.title ?? "atual"}, o paciente não vê as
@@ -369,6 +413,18 @@ function EditorForm({
         <p>
           {publishText(versionNumber, calendar.isSuccess ? nextPlanStart(calendar.data) : null)}
         </p>
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={confirmDiscard}
+        title={`Descartar o rascunho da versão ${versionNumber}?`}
+        confirmLabel="Descartar rascunho"
+        tone="danger"
+        loading={discard.isPending}
+        onConfirm={onDiscard}
+        onCancel={() => setConfirmDiscard(false)}
+      >
+        <p>{discardText(versions)}</p>
       </ConfirmDialog>
 
       <ConfirmDialog

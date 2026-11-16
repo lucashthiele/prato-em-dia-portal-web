@@ -674,6 +674,254 @@ describe("Arquivar versão vigente", () => {
     expect(await screen.findByText("Não foi possível arquivar a versão")).toBeVisible();
     expect(screen.queryByRole("alertdialog")).toBeNull();
   });
+
+  it("409 ao arquivar: Alert com Recarregar", async () => {
+    const user = userEvent.setup();
+    mockApi({ prescriptions: [prescription([published])] });
+    server.use(
+      http.post("*/api/v1/prescription-versions/:id/archive", () =>
+        HttpResponse.json(
+          { status: 409, code: "PRESCRIPTION_CONFLICT", message: "x" },
+          { status: 409 },
+        ),
+      ),
+    );
+    renderAt(`/pacientes/${PATIENT}`);
+    await user.click(await screen.findByRole("button", { name: "Arquivar versão" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "Arquivar versão",
+      }),
+    );
+    expect(await screen.findByText("Não foi possível arquivar a versão")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Recarregar" })).toBeVisible();
+  });
+});
+
+/** Handlers de descartar e de nova versão; `current` espelha o que o servidor guardaria. */
+function mockDiscardAndNewVersion(
+  initial: Prescription[],
+  options: { deleteStatus?: number; createStatus?: number } = {},
+) {
+  const calls: Call[] = [];
+  let current = initial;
+  server.use(
+    http.get("*/api/v1/nutritionists/me/patients/:id/prescriptions", () =>
+      HttpResponse.json(current),
+    ),
+    http.delete("*/api/v1/prescription-versions/:versionId", ({ params }) => {
+      calls.push({ kind: "discard", id: params.versionId as string });
+      if (options.deleteStatus) {
+        return HttpResponse.json(
+          { status: options.deleteStatus, code: "PRESCRIPTION_CONFLICT", message: "x" },
+          { status: options.deleteStatus },
+        );
+      }
+      current = current
+        .map((p) => ({ ...p, versions: p.versions?.filter((v) => v.id !== params.versionId) }))
+        .filter((p) => (p.versions?.length ?? 0) > 0);
+      return new HttpResponse(null, { status: 204 });
+    }),
+    http.post("*/api/v1/prescriptions/:id/versions", ({ params }) => {
+      calls.push({ kind: "new-version", id: params.id as string });
+      if (options.createStatus) {
+        return HttpResponse.json(
+          { status: options.createStatus, code: "PRESCRIPTION_CONFLICT", message: "x" },
+          { status: options.createStatus },
+        );
+      }
+      const created = draftVersion({ id: "v9", number: 3 });
+      current = current.map((p) => ({ ...p, versions: [...(p.versions ?? []), created] }));
+      return HttpResponse.json(created);
+    }),
+  );
+  return calls;
+}
+
+describe("Descartar rascunho", () => {
+  const published = draftVersion({
+    id: "v1",
+    number: 1,
+    status: "PUBLISHED",
+    publishedAt: "2026-11-02T10:00:00Z",
+  });
+  const draft2 = draftVersion({ id: "v2", number: 2 });
+
+  it("na aba, com versão vigente: confirma com o texto de perigo e mantém a vigente", async () => {
+    const user = userEvent.setup();
+    const initial = [prescription([published, draft2])];
+    mockApi({ prescriptions: initial });
+    const calls = mockDiscardAndNewVersion(initial);
+    renderAt(`/pacientes/${PATIENT}`);
+
+    await user.click(await screen.findByRole("button", { name: "Descartar rascunho" }));
+    const dialog = await screen.findByRole("alertdialog", {
+      name: "Descartar o rascunho da versão 2?",
+    });
+    expect(
+      within(dialog).getByText(
+        "As alterações deste rascunho serão perdidas. A versão vigente continua com o paciente.",
+      ),
+    ).toBeVisible();
+    expect(calls).toEqual([]);
+    await user.click(within(dialog).getByRole("button", { name: "Descartar rascunho" }));
+
+    await waitFor(() => expect(screen.queryByText("Há um rascunho não publicado")).toBeNull());
+    expect(calls).toEqual([{ kind: "discard", id: "v2" }]);
+    expect(screen.getByText("Prescrição vigente")).toBeVisible();
+  });
+
+  it("na aba, sem nunca ter publicado: a página volta para 'Criar prescrição'", async () => {
+    const user = userEvent.setup();
+    const initial = [prescription([draftVersion()])];
+    mockApi({ prescriptions: initial });
+    mockDiscardAndNewVersion(initial);
+    renderAt(`/pacientes/${PATIENT}`);
+
+    await user.click(await screen.findByRole("button", { name: "Descartar rascunho" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(
+      within(dialog).getByText(
+        "As alterações deste rascunho serão perdidas e a prescrição volta a não existir.",
+      ),
+    ).toBeVisible();
+    expect(within(dialog).queryByText(/versão vigente/)).toBeNull();
+    await user.click(within(dialog).getByRole("button", { name: "Descartar rascunho" }));
+
+    expect(await screen.findByRole("button", { name: "Criar prescrição" })).toBeVisible();
+  });
+
+  it("cancelar não chama o servidor", async () => {
+    const user = userEvent.setup();
+    const initial = [prescription([published, draft2])];
+    mockApi({ prescriptions: initial });
+    const calls = mockDiscardAndNewVersion(initial);
+    renderAt(`/pacientes/${PATIENT}`);
+
+    await user.click(await screen.findByRole("button", { name: "Descartar rascunho" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancelar" }),
+    );
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(calls).toEqual([]);
+  });
+
+  it("409 na aba: avisa e recarrega", async () => {
+    const user = userEvent.setup();
+    const initial = [prescription([published, draft2])];
+    mockApi({ prescriptions: initial });
+    mockDiscardAndNewVersion(initial, { deleteStatus: 409 });
+    renderAt(`/pacientes/${PATIENT}`);
+
+    await user.click(await screen.findByRole("button", { name: "Descartar rascunho" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "Descartar rascunho",
+      }),
+    );
+    expect(await screen.findByText("Não foi possível descartar o rascunho")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Recarregar" })).toBeVisible();
+  });
+
+  it("no editor com alterações pendentes: volta ao paciente sem o aviso de sair", async () => {
+    const user = userEvent.setup();
+    const initial = [prescription([published, draft2])];
+    mockApi({ prescriptions: initial });
+    const calls = mockDiscardAndNewVersion(initial);
+    const router = renderAt(editorUrl("v2"));
+
+    await addEgg(user);
+    expect(await screen.findByText("Alterações não salvas")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Descartar rascunho" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "Descartar rascunho",
+      }),
+    );
+
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/pacientes/${PATIENT}`));
+    expect(screen.queryByRole("alertdialog", { name: "Sair sem salvar?" })).toBeNull();
+    expect(calls).toEqual([{ kind: "discard", id: "v2" }]);
+    expect(await screen.findByText("Prescrição vigente")).toBeVisible();
+  });
+
+  it("no editor, sendo o único rascunho: o texto não fala em versão vigente", async () => {
+    const user = userEvent.setup();
+    const initial = [prescription([draftVersion()])];
+    mockApi({ prescriptions: initial });
+    mockDiscardAndNewVersion(initial);
+    const router = renderAt(editorUrl("v1"));
+
+    await user.click(await screen.findByRole("button", { name: "Descartar rascunho" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText(/a prescrição volta a não existir/)).toBeVisible();
+    await user.click(within(dialog).getByRole("button", { name: "Descartar rascunho" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/pacientes/${PATIENT}`));
+    expect(await screen.findByRole("button", { name: "Criar prescrição" })).toBeVisible();
+  });
+
+  it("409 no editor: Alert com Recarregar; recarregado, a versão não é mais rascunho", async () => {
+    const user = userEvent.setup();
+    const initial = [prescription([draftVersion()])];
+    mockApi({ prescriptions: initial });
+    mockDiscardAndNewVersion(initial, { deleteStatus: 409 });
+    renderAt(editorUrl("v1"));
+
+    await user.click(await screen.findByRole("button", { name: "Descartar rascunho" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "Descartar rascunho",
+      }),
+    );
+    expect(await screen.findByText("Não foi possível descartar o rascunho")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Recarregar" })).toBeVisible();
+  });
+});
+
+describe("Nova versão", () => {
+  const published = draftVersion({
+    id: "v2",
+    number: 2,
+    status: "PUBLISHED",
+    publishedAt: "2026-11-02T10:00:00Z",
+  });
+  const archived = { ...published, status: "ARCHIVED" as const };
+
+  it("em 'Sem versão vigente': cria o rascunho e abre o editor nele", async () => {
+    const user = userEvent.setup();
+    const initial = [prescription([archived])];
+    mockApi({ prescriptions: initial });
+    const calls = mockDiscardAndNewVersion(initial);
+    const router = renderAt(`/pacientes/${PATIENT}`);
+
+    expect(await screen.findByText("Sem versão vigente")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Nova versão" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe(editorUrl("v9")));
+    expect(calls).toEqual([{ kind: "new-version", id: "rx1" }]);
+    expect(await screen.findByText("Versão 3 · Rascunho")).toBeVisible();
+  });
+
+  it("não aparece quando já existe rascunho (aparece 'Continuar rascunho')", async () => {
+    const initial = [prescription([archived, draftVersion({ id: "v3", number: 3 })])];
+    mockApi({ prescriptions: initial });
+    renderAt(`/pacientes/${PATIENT}`);
+    expect(await screen.findByRole("button", { name: "Continuar rascunho" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Nova versão" })).toBeNull();
+  });
+
+  it("409: Alert com Recarregar", async () => {
+    const user = userEvent.setup();
+    const initial = [prescription([archived])];
+    mockApi({ prescriptions: initial });
+    mockDiscardAndNewVersion(initial, { createStatus: 409 });
+    renderAt(`/pacientes/${PATIENT}`);
+
+    await user.click(await screen.findByRole("button", { name: "Nova versão" }));
+    expect(await screen.findByText("Não foi possível criar a nova versão")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Recarregar" })).toBeVisible();
+  });
 });
 
 describe("Editor: estados de carga", () => {

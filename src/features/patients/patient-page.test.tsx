@@ -287,6 +287,52 @@ describe("Tela de paciente", () => {
     expect(router.state.location.pathname).toBe(`/pacientes/${PATIENT_ID}/prescricao/v3`);
   });
 
+  describe("Nova versão no cabeçalho", () => {
+    const withoutDraft: Prescription = {
+      ...prescription,
+      versions: prescription.versions?.filter((v) => v.status !== "DRAFT"),
+    };
+
+    it("não aparece quando há rascunho", async () => {
+      mockApi();
+      renderPage();
+      expect(await screen.findByRole("button", { name: "Continuar rascunho" })).toBeVisible();
+      expect(screen.queryByRole("button", { name: "Nova versão" })).toBeNull();
+    });
+
+    it("cria o rascunho e abre o editor nele", async () => {
+      mockApi({ prescriptions: [withoutDraft] });
+      let created = 0;
+      server.use(
+        http.post("*/api/v1/prescriptions/:id/versions", () => {
+          created += 1;
+          return HttpResponse.json({ id: "v9", number: 3, status: "DRAFT", meals: [] });
+        }),
+      );
+      const router = renderPage();
+      await userEvent.click(await screen.findByRole("button", { name: "Nova versão" }));
+      await waitFor(() => expect(screen.getByText("Editor do rascunho")).toBeVisible());
+      expect(created).toBe(1);
+      expect(router.state.location.pathname).toBe(`/pacientes/${PATIENT_ID}/prescricao/v9`);
+    });
+
+    it("409: mostra o aviso com Recarregar", async () => {
+      mockApi({ prescriptions: [withoutDraft] });
+      server.use(
+        http.post("*/api/v1/prescriptions/:id/versions", () =>
+          HttpResponse.json(
+            { status: 409, code: "PRESCRIPTION_CONFLICT", message: "x" },
+            { status: 409 },
+          ),
+        ),
+      );
+      renderPage();
+      await userEvent.click(await screen.findByRole("button", { name: "Nova versão" }));
+      expect(await screen.findByText("Não foi possível criar a nova versão")).toBeVisible();
+      expect(screen.getByRole("button", { name: "Recarregar" })).toBeVisible();
+    });
+  });
+
   it("não oferece ações com o vínculo encerrado", async () => {
     mockApi({ patient: patient({ relationshipStatus: "ENDED" }) });
     renderPage();

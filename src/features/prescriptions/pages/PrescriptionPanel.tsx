@@ -10,9 +10,11 @@ import {
   type PlanningPolicy,
   type Version,
 } from "../../../shared/ui";
-import { useArchiveVersion, useCreatePrescription } from "../api/mutations";
+import { useArchiveVersion, useCreatePrescription, useDiscardVersion } from "../api/mutations";
 import { usePatientPrescriptions, type PrescriptionVersion } from "../api/prescriptions";
 import { CreatePrescriptionDialog } from "../components/CreatePrescriptionDialog";
+import { discardText } from "../lib/discard-text";
+import { useNewVersion } from "../lib/useNewVersion";
 import { MealList } from "../components/MealList";
 import { PlanningModeCard } from "../components/PlanningModeCard";
 import { VersionDetails } from "../components/VersionDetails";
@@ -34,7 +36,24 @@ export function PrescriptionPanel({ patientId }: { patientId: string }) {
   const query = usePatientPrescriptions(patientId);
   const create = useCreatePrescription(patientId);
   const archive = useArchiveVersion(patientId);
-  const [dialog, setDialog] = useState<"create" | "archive" | null>(null);
+  const discard = useDiscardVersion(patientId);
+  const newVersion = useNewVersion(patientId);
+  const [dialog, setDialog] = useState<"create" | "archive" | "discard" | null>(null);
+
+  const conflict = (error: unknown) => error instanceof ApiError && error.status === 409;
+  const reload = (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => {
+        archive.reset();
+        discard.reset();
+        newVersion.reload();
+      }}
+    >
+      Recarregar
+    </Button>
+  );
 
   function confirmCreate(policy: PlanningPolicy) {
     create.mutate(policy, {
@@ -129,17 +148,49 @@ export function PrescriptionPanel({ patientId }: { patientId: string }) {
           tone="warm"
           title="Há um rascunho não publicado"
           action={
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => navigate(`/pacientes/${patientId}/prescricao/${draft.id}`)}
-            >
-              Continuar rascunho
-            </Button>
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate(`/pacientes/${patientId}/prescricao/${draft.id}`)}
+              >
+                Continuar rascunho
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  discard.reset();
+                  setDialog("discard");
+                }}
+              >
+                Descartar rascunho
+              </Button>
+            </>
           }
         >
           A versão {draft.number} foi criada em {formatDate(draft.createdAt)}. O paciente ainda vê a
           versão vigente no app.
+        </Alert>
+      ) : null}
+
+      {conflict(discard.error) ? (
+        <Alert tone="danger" title="Não foi possível descartar o rascunho" action={reload}>
+          Este rascunho mudou em outra aba e não pode mais ser descartado. Recarregue para ver a
+          versão atual.
+        </Alert>
+      ) : discard.isError ? (
+        <Alert tone="danger" title="Não foi possível descartar o rascunho">
+          Tente novamente em instantes.
+        </Alert>
+      ) : null}
+      {conflict(newVersion.error) ? (
+        <Alert tone="danger" title="Não foi possível criar a nova versão" action={reload}>
+          Esta prescrição mudou em outra aba. Recarregue antes de criar a nova versão.
+        </Alert>
+      ) : newVersion.error ? (
+        <Alert tone="danger" title="Não foi possível criar a nova versão">
+          Tente novamente em instantes.
         </Alert>
       ) : null}
 
@@ -179,14 +230,35 @@ export function PrescriptionPanel({ patientId }: { patientId: string }) {
                 Arquivar versão
               </Button>
             </div>
-            {archive.isError ? (
+            {conflict(archive.error) ? (
+              <Alert tone="danger" title="Não foi possível arquivar a versão" action={reload}>
+                Esta versão mudou em outra aba. Recarregue para ver a situação atual.
+              </Alert>
+            ) : archive.isError ? (
               <Alert tone="danger" title="Não foi possível arquivar a versão">
                 Tente novamente em instantes.
               </Alert>
             ) : null}
           </>
         ) : (
-          <EmptyState title="Sem versão vigente" icon="file">
+          <EmptyState
+            title="Sem versão vigente"
+            icon="file"
+            action={
+              newVersion.available ? (
+                <Button
+                  icon="plus"
+                  loading={newVersion.pending}
+                  onClick={() => {
+                    discard.reset();
+                    newVersion.start();
+                  }}
+                >
+                  Nova versão
+                </Button>
+              ) : undefined
+            }
+          >
             O paciente só vê a prescrição depois que você publicar uma versão.
           </EmptyState>
         )}
@@ -223,6 +295,20 @@ export function PrescriptionPanel({ patientId }: { patientId: string }) {
           O paciente mantém o plano da semana em curso, mas nenhum plano novo será gerado até você
           publicar outra versão.
         </p>
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={dialog === "discard" && Boolean(draft)}
+        title={`Descartar o rascunho da versão ${draft?.number}?`}
+        confirmLabel="Descartar rascunho"
+        tone="danger"
+        loading={discard.isPending}
+        onConfirm={() =>
+          draft?.id && discard.mutate(draft.id, { onSettled: () => setDialog(null) })
+        }
+        onCancel={() => setDialog(null)}
+      >
+        <p>{discardText(versions)}</p>
       </ConfirmDialog>
     </div>
   );
