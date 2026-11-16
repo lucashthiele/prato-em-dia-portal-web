@@ -18,6 +18,7 @@ import {
   type FoodRef,
   type PortionRef,
 } from "../lib/editor-model";
+import { planningModeLabel } from "../lib/labels";
 import { nextPlanStart, publishText } from "../lib/publish-text";
 import { useUnsavedGuard } from "../lib/useUnsavedGuard";
 import styles from "../components/Editor.module.css";
@@ -332,8 +333,8 @@ function EditorForm({
       ) : null}
       {mode !== "SUBSTITUTIONS_ONLY" && hasSubstitutions(draft) ? (
         <Alert tone="warm">
-          Com o modo Seguir o plano, o paciente não vê as substituições. Altere o modo na aba
-          Prescrição.
+          Com o modo {planningModeLabel(mode)?.title ?? "atual"}, o paciente não vê as
+          substituições. Altere o modo na aba Prescrição.
         </Alert>
       ) : null}
 
