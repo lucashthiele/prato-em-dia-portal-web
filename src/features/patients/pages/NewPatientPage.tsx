@@ -69,6 +69,11 @@ export function NewPatientPage() {
           }}
           error={errors.email}
         />
+        {failure?.existingPatientId && !clientErrors.email ? (
+          <Link className={styles.back} to={`/pacientes/${failure.existingPatientId}`}>
+            Abrir paciente
+          </Link>
+        ) : null}
         <div className={styles.actions}>
           <Button type="submit" loading={create.isPending}>
             Cadastrar paciente
