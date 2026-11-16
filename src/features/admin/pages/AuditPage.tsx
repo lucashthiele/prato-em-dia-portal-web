@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router";
 import { ApiError } from "../../../shared/api";
 import { Alert, Button, EmptyState, TextField } from "../../../shared/ui";
-import { useAccountNames, useAuditEvents } from "../api/audit";
+import { useAuditEvents } from "../api/audit";
 import { AuditTable } from "../components/AuditTable";
 import { Pagination } from "../components/Pagination";
 import {
@@ -13,6 +13,7 @@ import {
   parseAuditFilters,
   type AuditFilters,
 } from "../lib/filters";
+import { auditAccountName } from "../lib/labels";
 import styles from "./Page.module.css";
 
 export function AuditPage() {
@@ -20,21 +21,22 @@ export function AuditPage() {
   const filters = parseAuditFilters(params);
   const audit = useAuditEvents(auditFiltersToQuery(filters));
   const events = audit.data?.events ?? [];
-  const names = useAccountNames(
-    [
-      ...events.map((event) => event.actorAccountId),
-      ...events.map((event) => event.targetAccountId),
-      filters.targetId,
-    ].filter((id): id is string => Boolean(id)),
-  );
 
   function update(patch: Partial<AuditFilters>) {
     setParams(auditFiltersToParams({ ...filters, page: 1, ...patch }));
   }
 
   const data = audit.data;
-  const target = filters.targetId ? names.get(filters.targetId) : undefined;
-  const invalidRange = filters.from !== "" && filters.to !== "" && filters.from > filters.to;
+  // O nome da conta filtrada vem dos próprios eventos (S-09); sem eventos, cai no id curto.
+  const targetEvent = events.find((event) => event.targetAccountId === filters.targetId);
+  const targetLabel = auditAccountName(
+    filters.targetId,
+    targetEvent?.targetName,
+    targetEvent?.targetEmail,
+  );
+  const invalidRange =
+    (filters.from !== "" && filters.to !== "" && filters.from > filters.to) ||
+    (audit.error instanceof ApiError && audit.error.code === "AUDIT_INVALID_FILTER");
 
   return (
     <div className={styles.page}>
@@ -87,7 +89,7 @@ export function AuditPage() {
 
       {filters.targetId ? (
         <p className={styles.muted}>
-          Conta: {target?.state === "found" ? target.name : "Conta não encontrada"}{" "}
+          Conta: {targetLabel}{" "}
           <Button size="sm" variant="outline" onClick={() => update({ targetId: "" })}>
             Remover filtro de conta
           </Button>
@@ -98,7 +100,7 @@ export function AuditPage() {
         <Alert tone="warm">A data inicial é depois da data final. Ajuste o período.</Alert>
       ) : null}
 
-      {audit.isPending ? (
+      {invalidRange ? null : audit.isPending ? (
         <p role="status" aria-busy="true" className={styles.muted}>
           Carregando auditoria…
         </p>
@@ -150,7 +152,7 @@ export function AuditPage() {
           <p role="status" className={styles.muted}>
             {data.total === 1 ? "1 evento" : `${data.total} eventos`}
           </p>
-          <AuditTable events={data.events} names={names} />
+          <AuditTable events={data.events} />
           <Pagination
             page={filters.page}
             totalPages={data.totalPages}

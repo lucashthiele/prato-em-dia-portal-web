@@ -46,7 +46,7 @@ export function CreateNutritionistPage() {
           state: { created: true },
         }),
       onError: (error) => {
-        if (error instanceof ApiError && error.status === 409) {
+        if (error instanceof ApiError && error.code === "IDENTITY_ACCOUNT_ALREADY_EXISTS") {
           setErrors({ email: EMAIL_IN_USE });
         } else if (error instanceof ApiError && error.fieldErrors.length > 0) {
           const fromApi: Errors = {};
